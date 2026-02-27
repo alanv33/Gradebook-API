@@ -1,6 +1,8 @@
 package com.project475;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -13,10 +15,12 @@ public class App {
         String url = dotenv.get("DB_URL");
 
         // Attempt connection to DB
-        try (Connection conn = DriverManager.getConnection(url)) {
-            System.out.println("✅ Connected to Supabase!");
+        try (Connection conn = DriverManager.getConnection(url)) {    // Connection object (Kinda like a scanner) 
+            System.out.println("Connected to Supabase!");
 
-            // Connection object (Kinda like a scanner)
+
+            // This can only be used once. Each Statement is one and done
+            // But also not really. If you wanna know more lmk
             Statement stmt = conn.createStatement();
             
             // Test command
@@ -33,4 +37,23 @@ public class App {
             e.printStackTrace();
         }
     }
+
+
+    /* Intializes the database according to the schema.sql file
+        Do not use this function unless we change the schema*/
+    public static void initializeDatabase(Connection conn) {
+    try {
+        // Turns the file into a string
+        String sql = new String(Files.readAllBytes(Paths.get("schema.sql")));
+        
+        Statement stmt = conn.createStatement();
+        
+        stmt.execute(sql);
+        
+        System.out.println("Database schema initialized successfully!");
+    } catch (Exception e) {
+        System.err.println("Failed to run schema.sql");
+        e.printStackTrace();
+    }
+}
 }
