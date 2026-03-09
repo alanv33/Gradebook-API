@@ -83,23 +83,42 @@ public class server {
         }
     }
 
-    // Currently deletes the student but not enrollments.
-    // Could be changed to cascade deletes or soft detete by setting to inactive instead. (Database must be changed for this)
-    public void dropStudent(int id) {
-        String sql = "DELETE FROM Student WHERE ID=?";
+    // Sets the student's isActive status to false. Student is not deleted from the database and can be reactivated by setting isActive to true.
+    public void deactivateStudent(int studentNum) {
+        String sql = "UPDATE Student SET Active=false WHERE StudentNum=?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setInt(1, id);
+            pstmt.setInt(1, studentNum);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Student deleted successfully.");
+                System.out.println("Student set to inactive.");
             } else {
-                System.out.println("No student found with ID: " + id);
+                System.out.println("No student found with StudentNum: " + studentNum);
             }
         } catch (SQLException e) {
-            System.out.println("Error deleting student: " + e.getMessage());
+            System.out.println("Error updating student: " + e.getMessage());
         }
     }
+
+    // Used to reactivate a student that was dropped. Sets the student's isActive status to true.
+    public void activateStudent (int studentNum) {
+        String sql = "UPDATE Student SET Active=true WHERE StudentNum=?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, studentNum);
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Student set to active.");
+            } else {
+                System.out.println("No student found with StudentNum: " + studentNum);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating student: " + e.getMessage());
+        }
+    }
+
 }
