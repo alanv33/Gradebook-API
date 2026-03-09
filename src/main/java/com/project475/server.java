@@ -157,3 +157,45 @@ public class server {
         }
     }
 
+        public void createGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
+        
+        String sql = "INSERT INTO Grade (courseNumber, gradeCategoryName, gradeWeight) " +
+                     "VALUES (?, ?, ?)";
+
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, courseNumber);
+            pstmt.setString(2, gradeCategoryName);
+            pstmt.setInt(3, gradeWeight);
+
+            pstmt.executeUpdate();
+            System.out.println("Grade Category created successfully.");
+        } catch (SQLException e) {
+            System.out.println("Error creating Grade Category: " + e.getMessage());
+        }
+    }
+
+    public void updateGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight){
+        String sql = "UPDATE GradeCategory SET gradeCategoryName=?, gradeWeight=?, WHERE courseNumber=?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+
+            pstmt.setInt(1, courseNumber);
+            pstmt.setString(2, gradeCategoryName);
+            pstmt.setInt(3, gradeWeight);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Grade Category updated successfully.");
+            } else {
+                System.out.println("No category found with course number: " + courseNumber);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating grade: " + e.getMessage());
+        }
+
+
+    }
+
