@@ -9,7 +9,7 @@ import java.sql.Statement;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
-public class App {
+public class serverDriver {
     public static void main(String[] args) {
         /* -- DO NOT TOUCH --  */
         Dotenv dotenv = Dotenv.load();

@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS Student(
     Zipcode     VARCHAR(5) NOT NULL,
     StateID     VARCHAR(2) NOT NULL,
     ClassStandingID VARCHAR(2) NOT NULL,
+    isActive    BOOLEAN,
 
     PRIMARY KEY (ID),
     Foreign Key (StateID) references State(ID) DEFERRABLE INITIALLY DEFERRED,
@@ -66,6 +67,7 @@ CREATE TABLE IF NOT EXISTS Teacher(
     Street      VARCHAR(40) NOT NULL,
     Zipcode     VARCHAR(5) NOT NULL,
     StateID     VARCHAR(2) NOT NULL,
+    isActive    BOOLEAN,
 
     PRIMARY KEY (ID),
     Foreign Key (StateID) references State(ID) DEFERRABLE INITIALLY DEFERRED

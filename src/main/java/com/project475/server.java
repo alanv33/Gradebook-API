@@ -2,6 +2,7 @@ package com.project475;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class server {
@@ -103,4 +104,39 @@ public class server {
             System.out.println("Error deleting student: " + e.getMessage());
         }
     }
+
+    public void addAssignments(String name, String gradeCatName, String dueDate, int courseNum) {
+    String findIdSql = "SELECT gc.ID FROM GradeCategory gc " +
+                       "JOIN Course c ON gc.CourseID = c.ID " +
+                       "WHERE gc.Name = ? AND c.CourseNum = ?";
+    
+    String insertSql = "INSERT INTO Assignment(Name, CategoryID, DueDate) VALUES(?,?,?)";
+
+    try {
+        int categoryId = -1;
+                try (PreparedStatement idStmt = conn.prepareStatement(findIdSql)) {
+            idStmt.setString(1, gradeCatName);
+            idStmt.setInt(2, courseNum);
+            ResultSet rs = idStmt.executeQuery();
+            
+            if (rs.next()) {
+                categoryId = rs.getInt("ID");
+            } else {
+                System.out.println("Error: Grade Category or Course not found.");
+                return;
+            }
+        }
+        try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+            pstmt.setString(1, name);
+            pstmt.setInt(2, categoryId);
+            pstmt.setString(3, dueDate);
+            
+            pstmt.executeUpdate();
+            System.out.println("Assignment added successfully!");
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
 }
