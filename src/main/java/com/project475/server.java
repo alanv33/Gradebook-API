@@ -11,7 +11,8 @@ public class server {
         this.conn = conn;
     }
     // Create a new student in the database. ID must be unique and is used to identify the student for updates and deletes.
-    public void createStudent(int id, int studentNum, String firstName, String lastName, 
+    // Remove all ID's, auto assigned by server
+    public void createStudent(int studentNum, String firstName, String lastName, 
                               String email, String phoneNum, String street, 
                               String zipcode, String stateId, String classStandingId) {
         
@@ -19,32 +20,6 @@ public class server {
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, id);
-            pstmt.setInt(2, studentNum);
-            pstmt.setString(3, firstName);
-            pstmt.setString(4, lastName);
-            pstmt.setString(5, email);
-            pstmt.setString(6, phoneNum);
-            pstmt.setString(7, street);
-            pstmt.setString(8, zipcode);       
-            pstmt.setString(9, stateId);
-            pstmt.setString(10, classStandingId);
-
-            pstmt.executeUpdate();
-            System.out.println("Student created successfully.");
-        } catch (SQLException e) {
-            System.out.println("Error creating student: " + e.getMessage());
-        }
-    }
-// Update student information. ID is used to find the student and cannot be changed.
-    public void updateStudent(int id, int studentNum, String firstName, String lastName,
-                                String email, String phoneNum, String street,
-                                String zipcode, String stateId, String classStandingId) {
-                                    
-        String sql = "UPDATE Student SET StudentNum=?, FirstName=?, LastName=?, Email=?, PhoneNum=?, Street=?, Zipcode=?, StateID=?, ClassStandingID=? WHERE ID=?";
-
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setInt(1, studentNum);
@@ -56,7 +31,31 @@ public class server {
             pstmt.setString(7, zipcode);       
             pstmt.setString(8, stateId);
             pstmt.setString(9, classStandingId);
-            pstmt.setInt(10, id);
+
+            pstmt.executeUpdate();
+            System.out.println("Student created successfully.");
+        } catch (SQLException e) {
+            System.out.println("Error creating student: " + e.getMessage());
+        }
+    }
+// Update student information. ID is used to find the student and cannot be changed.
+    public void updateStudent(int studentNum, String firstName, String lastName,
+                                String email, String phoneNum, String street,
+                                String zipcode, String stateId, String classStandingId) {
+                                    
+        String sql = "UPDATE Student SET StudentNum=?, FirstName=?, LastName=?, Email=?, PhoneNum=?, Street=?, Zipcode=?, StateID=?, ClassStandingID=? WHERE ID=?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, firstName);
+            pstmt.setString(2, lastName);
+            pstmt.setString(3, email);
+            pstmt.setString(4, phoneNum);
+            pstmt.setString(5, street);
+            pstmt.setString(6, zipcode);       
+            pstmt.setString(7, stateId);
+            pstmt.setString(8, classStandingId);
+            pstmt.setInt(9, id);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
