@@ -1,11 +1,13 @@
+package com.project475;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class StudentAPI {
+public class server {
     private Connection conn;
 
-    public StudentAPI(Connection conn) {
+    public server(Connection conn) {
         this.conn = conn;
     }
     // Create a new student in the database. ID must be unique and is used to identify the student for updates and deletes.
