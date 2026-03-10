@@ -199,7 +199,118 @@ public class server {
         } catch (SQLException e) {
             System.out.println("Error updating grade: " + e.getMessage());
         }
+    }
 
+    public void deleteGradeCategory(int courseNumber, String gradeCategoryName) {
+        String sql = "DELETE FROM GradeCategory WHERE CourseID = (SELECT ID FROM Course WHERE CourseNum = ?) AND Name = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, courseNumber);
+            pstmt.setString(2, gradeCategoryName);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Grade Category deleted successfully.");
+            } else {
+                System.out.println("No category found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error deleting grade category: " + e.getMessage());
+        }
+    }
+
+    public void dropStudent(int studentNum, int courseNum) {
+        String sql = "DELETE FROM Enrollment WHERE StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
+                    "AND CourseID = (SELECT ID FROM Course WHERE CourseNum = ?)";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentNum);
+            pstmt.setInt(2, courseNum);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Student dropped from course successfully.");
+            } else {
+                System.out.println("Enrollment not found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error dropping student: " + e.getMessage());
+        }
+    }
+
+    public void updateAssignmentGrade(String assignmentName, int studentNum, int courseNum, double grade) {
+        String sql = "UPDATE StudentGrade SET Grade = ? WHERE AssignmentID = " +
+                    "(SELECT a.ID FROM Assignment a JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                    "JOIN Course c ON gc.CourseID = c.ID WHERE a.Name = ? AND c.CourseNum = ?) " +
+                    "AND StudentID = (SELECT ID FROM Student WHERE StudentNum = ?)";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDouble(1, grade);
+            pstmt.setString(2, assignmentName);
+            pstmt.setInt(3, courseNum);
+            pstmt.setInt(4, studentNum);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Assignment grade updated successfully.");
+            } else {
+                System.out.println("No matching assignment grade found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating grade: " + e.getMessage());
+        }
+    }
+
+    public Double calculateCourseGrade(int studentNum, int courseNum) {
+        String sql = "SELECT SUM(sg.Grade * gc.Weight / 100.0) AS FinalGrade " +
+                    "FROM StudentGrade sg " +
+                    "JOIN Assignment a ON sg.AssignmentID = a.ID " +
+                    "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                    "JOIN Course c ON gc.CourseID = c.ID " +
+                    "WHERE sg.StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
+                    "AND c.CourseNum = ? " +
+                    "GROUP BY c.ID";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentNum);
+            pstmt.setInt(2, courseNum);
+            
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                double grade = rs.getDouble("FinalGrade");
+                System.out.println("Current grade: " + grade);
+                return grade;
+            } else {
+                System.out.println("No grades found for this student in this course.");
+                return null;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error calculating grade: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public void listStudentsInCourse(int courseNum) {
+        String sql = "SELECT s.StudentNum, s.FirstName, s.LastName, s.Email " +
+                    "FROM Student s " +
+                    "JOIN Enrollment e ON s.ID = e.StudentID " +
+                    "JOIN Course c ON e.CourseID = c.ID " +
+                    "WHERE c.CourseNum = ? AND s.isActive = true";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, courseNum);
+            
+            ResultSet rs = pstmt.executeQuery();
+            System.out.println("Students in course " + courseNum + ":");
+            while (rs.next()) {
+                System.out.println(rs.getInt("StudentNum") + " - " + 
+                                rs.getString("FirstName") + " " + 
+                                rs.getString("LastName") + " (" + 
+                                rs.getString("Email") + ")");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error listing students: " + e.getMessage());
+        }
     }
 
 }
