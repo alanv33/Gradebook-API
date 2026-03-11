@@ -294,16 +294,16 @@ public class server {
         }
     }
 
-    public void createGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
+    public void createGradeCategory(int ID, int courseNumber, String gradeCategoryName, int gradeWeight) {
 
-        String sql = "INSERT INTO Grade (courseNumber, gradeCategoryName, gradeWeight) " +
-                "VALUES (?, ?, ?)";
+        String sql = "INSERT INTO Grade (ID, courseNumber, gradeCategoryName, gradeWeight) " +
+                "VALUES (?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, courseNumber);
-            pstmt.setString(2, gradeCategoryName);
-            pstmt.setInt(3, gradeWeight);
+            pstmt.setInt(1, ID);
+            pstmt.setInt(2, courseNumber);
+            pstmt.setString(3, gradeCategoryName);
+            pstmt.setInt(4, gradeWeight);
 
             pstmt.executeUpdate();
             System.out.println("Grade Category created successfully.");
@@ -312,14 +312,14 @@ public class server {
         }
     }
 
-    public void updateGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
-        String sql = "UPDATE GradeCategory SET gradeCategoryName=?, gradeWeight=?, WHERE courseNumber=?";
+    public void updateGradeCategory(int ID, int courseNumber, String gradeCategoryName, int gradeWeight) {
+        String sql = "UPDATE GradeCategory SET gradeCategoryName=?, gradeWeight=?, WHERE courseNumber=? AND ID =?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, courseNumber);
-            pstmt.setString(2, gradeCategoryName);
-            pstmt.setInt(3, gradeWeight);
+            pstmt.setInt(1, ID);
+            pstmt.setInt(2, courseNumber);
+            pstmt.setString(3, gradeCategoryName);
+            pstmt.setInt(4, gradeWeight);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
