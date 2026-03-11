@@ -49,7 +49,7 @@ public class server {
     }
 
     // Update student information. Calls the performUpdate helper function to update specified fields.
-    // Repkaced deactivate and activate student
+    // Replaced deactivate and activate student
     public String updateStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId) {
@@ -84,12 +84,6 @@ public class server {
         }
     }
 
-    public String dropStudent(int studentNum) {
-        Map<String, Object> data = new HashMap<>();
-        data.put ("Active", false);
-        return this.performUpdate("Student", "StudentNum", studentNum, data);
-    }
-
     // Takes a list of students to create or update. If a student with the given StudentNum already exists, that student's information will be updated.
     // If not, a new student will be created.
     public String crupdateStudents(List<Map<String, Object>> students) {
@@ -103,8 +97,9 @@ public class server {
                  "isActive = EXCLUDED.isActive;";
 
     try {
-        conn.setAutoCommit(false); // START TRANSACTION
 
+        conn.setAutoCommit(false); // START TRANSACTION
+        
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (Map<String, Object> s : students) {
                 pstmt.setInt(1, (int) s.get("StudentNum"));
@@ -218,25 +213,7 @@ public class server {
         }
     }
 
-    // Used to reactivate a student that was dropped. Sets the student's isActive
-    // status to true.
-    public void activateStudent(int studentNum) {
-        String sql = "UPDATE Student SET Active=true WHERE StudentNum=?";
 
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, studentNum);
-
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Student set to active.");
-            } else {
-                System.out.println("No student found with StudentNum: " + studentNum);
-            }
-        } catch (SQLException e) {
-            System.out.println("Error updating student: " + e.getMessage());
-        }
-    }
 
     public void createGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
 
@@ -294,7 +271,7 @@ public class server {
         }
     }
 
-    public void dropStudent(int studentNum, int courseNum) {
+    public String dropStudent(int studentNum, int courseNum) {
         String sql = "DELETE FROM Enrollment WHERE StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
                 "AND CourseID = (SELECT ID FROM Course WHERE CourseNum = ?)";
 
@@ -305,11 +282,14 @@ public class server {
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Student dropped from course successfully.");
+                return "Student dropped from course successfully.";
             } else {
                 System.out.println("Enrollment not found.");
+                return "Enrollment not found.";
             }
         } catch (SQLException e) {
             System.out.println("Error dropping student: " + e.getMessage());
+            return "Error dropping student: " + e.getMessage();
         }
     }
 
