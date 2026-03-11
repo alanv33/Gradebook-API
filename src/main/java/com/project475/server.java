@@ -12,14 +12,25 @@ import java.util.Map;
 public class server {
     private Connection conn;
 
-    public server(Connection conn) {
-        this.conn = conn;
+    public server() {
+        /* -- DO NOT TOUCH -- */
+        Dotenv dotenv = Dotenv.load();
+        String url = dotenv.get("DB_URL");
+
+        // Attempt connection to DB
+        try {
+            this.conn = DriverManager.getConnection(url);
+
+        } catch (Exception e) {
+            System.err.println("Connection failed!");
+            e.printStackTrace();
+        }
     }
 
     // Create a new student in the database. ID must be unique and is used to
     // identify the student for updates and deletes.
     // Remove all ID's, auto assigned by server
-    public String createStudent(int studentNum, String firstName, String lastName,
+    public void createStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId) {
 
@@ -46,9 +57,9 @@ public class server {
         }
     }
 
-    // Update student information. Calls the performUpdate helper function to update specified fields.
-    // Replaced deactivate and activate student
-    public String updateStudent(int studentNum, String firstName, String lastName,
+    // Update student information. ID is used to find the student and cannot be
+    // changed.
+    public void updateStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId) {
 
@@ -144,7 +155,7 @@ public class server {
                 "JOIN Course c ON gc.CourseID = c.ID " +
                 "WHERE gc.Name = ? AND c.CourseNum = ?";
 
-        String insertSql = "INSERT INTO Assignment(Name, CategoryID, DueDate) VALUES(?,?,?)";
+        String insertSql = "INSERT INTO Assignment(Name, CategoryID, DueDate) VALUES(?,?,?::timestamp)";
 
         try {
             int categoryId = -1;
@@ -223,14 +234,14 @@ public class server {
         }
     }
 
-    public void deleteAssignment(String assignmentName, String courseName) {
+    public void deleteAssignment(String assignmentName, int courseNum) {
         String sql = "DELETE FROM Assignment WHERE name = ? AND categoryID IN" +
                 " (SELECT gradeCategory.ID FROM gradeCategory" +
                 " JOIN Course ON (Course.ID = gradeCategory.courseID)" +
-                " WHERE course.name = ?)";
+                " WHERE course.coursenum = ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, assignmentName);
-            pstmt.setString(2, courseName);
+            pstmt.setInt(2, courseNum);
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -326,7 +337,7 @@ public class server {
 
     public void createGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
         String sql = "INSERT INTO GradeCategory (Name, Weight, CourseID) " +
-                    "VALUES (?, ?, (SELECT ID FROM Course WHERE CourseNum = ?))";
+                "VALUES (?, ?, (SELECT ID FROM Course WHERE CourseNum = ?))";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, gradeCategoryName);
@@ -713,10 +724,47 @@ public class server {
         
         String insertSQL = "INSERT INTO Course(CourseNum, CourseName, TeacherNum, Capacity, TimeSlotID) VALUES (?, ?, ?, ?, ?)";
 
+    try{
+        int categoryId = -1;
+        try(PreparedStatement idStmt = conn.prepareStatement(findCourseOfferingNameSQL)){
+            idStmt.setString(1, courseName);
+            idStmt.setInt(2, courseNum);
+            ResultSet rs = idStmt.executeQuery();
+
+            if(rs.next()){
+                categoryId = rs.getInt("ID");
+            } else {
+                System.out.println("Error: Course Offering or Course not found.");
+                return;
+            }
+        }
+        try(PreparedStatement pstmt = conn.prepareStatement(insertSQL)){
+            pstmt.setInt(1, teacherNum);
+            pstmt.setInt(2, capacity);
+            pstmt.setString(3, timeSlotID);
+
+            pstmt.executeUpdate();
+            System.out.println("Course created successfully!");
+        }
+    } catch(SQLException e){
+        e.printStackTrace();
+    }          
+}
+
+    public void deleteCourse(int courseNum) {
+        String sql = "DELETE FROM Course WHERE CourseNum = ?";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, courseNum);
-            pstmt.setString(2,findCourseOfferingNameSQL);
-         
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Course deleted successfully.");
+            } else {
+                System.out.println("No course found with CourseNum: " + courseNum);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error deleting course: " + e.getMessage());
         }
     }
 }
