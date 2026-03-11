@@ -43,15 +43,13 @@ public class server {
     // identify the student for updates and deletes.
     // Remove all ID's, auto assigned by server
     public void createStudent(int studentNum, String firstName, String lastName,
-            String email, String phoneNum, String street,
-            String zipcode, String stateId, String classStandingId) {
+        String email, String phoneNum, String street,
+        String zipcode, String stateId, String classStandingId) {
 
-        String sql = "INSERT INTO Student (ID, StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID) "
-                +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setInt(1, studentNum);
             pstmt.setString(2, firstName);
             pstmt.setString(3, lastName);
@@ -72,13 +70,12 @@ public class server {
     // Update student information. ID is used to find the student and cannot be
     // changed.
     public void updateStudent(int studentNum, String firstName, String lastName,
-            String email, String phoneNum, String street,
-            String zipcode, String stateId, String classStandingId) {
+        String email, String phoneNum, String street,
+        String zipcode, String stateId, String classStandingId) {
 
-        String sql = "UPDATE Student SET StudentNum=?, FirstName=?, LastName=?, Email=?, PhoneNum=?, Street=?, Zipcode=?, StateID=?, ClassStandingID=? WHERE ID=?";
+        String sql = "UPDATE Student SET FirstName=?, LastName=?, Email=?, PhoneNum=?, Street=?, Zipcode=?, StateID=?, ClassStandingID=? WHERE StudentNum=?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setString(1, firstName);
             pstmt.setString(2, lastName);
             pstmt.setString(3, email);
@@ -87,6 +84,7 @@ public class server {
             pstmt.setString(6, zipcode);
             pstmt.setString(7, stateId);
             pstmt.setString(8, classStandingId);
+            pstmt.setInt(9, studentNum);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
@@ -320,16 +318,14 @@ public class server {
         }
     }
 
-    public void createGradeCategory(int ID, int courseNumber, String gradeCategoryName, int gradeWeight) {
-
-        String sql = "INSERT INTO Grade (ID, courseNumber, gradeCategoryName, gradeWeight) " +
-                "VALUES (?, ?, ?, ?)";
+    public void createGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
+        String sql = "INSERT INTO GradeCategory (Name, Weight, CourseID) " +
+                    "VALUES (?, ?, (SELECT ID FROM Course WHERE CourseNum = ?))";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, ID);
-            pstmt.setInt(2, courseNumber);
-            pstmt.setString(3, gradeCategoryName);
-            pstmt.setInt(4, gradeWeight);
+            pstmt.setString(1, gradeCategoryName);
+            pstmt.setInt(2, gradeWeight);
+            pstmt.setInt(3, courseNumber);
 
             pstmt.executeUpdate();
             System.out.println("Grade Category created successfully.");
@@ -338,20 +334,19 @@ public class server {
         }
     }
 
-    public void updateGradeCategory(int ID, int courseNumber, String gradeCategoryName, int gradeWeight) {
-        String sql = "UPDATE GradeCategory SET gradeCategoryName=?, gradeWeight=?, WHERE courseNumber=? AND ID =?";
+    public void updateGradeCategory(int courseNumber, String gradeCategoryName, int newWeight) {
+        String sql = "UPDATE GradeCategory SET Weight=? WHERE Name=? AND CourseID=(SELECT ID FROM Course WHERE CourseNum=?)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, ID);
-            pstmt.setInt(2, courseNumber);
-            pstmt.setString(3, gradeCategoryName);
-            pstmt.setInt(4, gradeWeight);
+            pstmt.setInt(1, newWeight);
+            pstmt.setString(2, gradeCategoryName);
+            pstmt.setInt(3, courseNumber);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Grade Category updated successfully.");
             } else {
-                System.out.println("No category found with course number: " + courseNumber);
+                System.out.println("No category found.");
             }
         } catch (SQLException e) {
             System.out.println("Error updating grade: " + e.getMessage());
@@ -519,10 +514,24 @@ public class server {
             System.out.println("Error updating teacher: " + e.getMessage());
         }
     }
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Teacher updated successfully.");
+            } else {
+                System.out.println("No teacher found with TeacherNum: " + teacherNum);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating teacher: " + e.getMessage());
+        }
+    }
 
     public void deactivateTeacher(int teacherNum) {
         String sql = "UPDATE Teacher SET Active=false WHERE TeacherNum=?";
+    public void deactivateTeacher(int teacherNum) {
+        String sql = "UPDATE Teacher SET Active=false WHERE TeacherNum=?";
 
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, teacherNum);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, teacherNum);
 
@@ -536,10 +545,24 @@ public class server {
             System.out.println("Error updating teacher: " + e.getMessage());
         }
     }
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Teacher set to inactive.");
+            } else {
+                System.out.println("No teacher found with TeacherNum: " + teacherNum);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating teacher: " + e.getMessage());
+        }
+    }
 
     public void activateTeacher(int teacherNum) {
         String sql = "UPDATE Teacher SET Active=true WHERE TeacherNum=?";
+    public void activateTeacher(int teacherNum) {
+        String sql = "UPDATE Teacher SET Active=true WHERE TeacherNum=?";
 
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, teacherNum);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, teacherNum);
 
@@ -563,11 +586,46 @@ public class server {
 
         String insertSQL = "INSERT INTO Course(CourseNum, CourseName, TeacherNum, Capacity, TimeSlotID) VALUES (?, ?, ?, ?, ?)";
 
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, courseNum);
-            pstmt.setString(2, findCourseOfferingNameSQL);
+    try{
+        int categoryId = -1;
+        try(PreparedStatement idStmt = conn.prepareStatement(findCourseOfferingNameSQL)){
+            idStmt.setString(1, courseName)
+            idStmt.setInt(2, courseNum);
+            ResultSet rs = idStmt.executeQuery();
+
+            if(rs.next()){
+                categoryId = rs.getInt("ID");
+            } else {
+                System.out.println("Error: Course Offering or Course not found.");
+                return;
+            }
         }
+        try(PreparedStatement pstmt = conn.prepareStatement(insertSQL)){
+            pstmt.setInt(1, teacherNum);
+            pstmt.setInt(2, capacity);
+            pstmt.setString(3, timeSlotID);
 
+            pstmt.executeUpdate();
+            System.out.println("Course created successfully!");
+        }
+    } catch(SQLException e){
+        e.printStackTrace();
+    }          
+}
+
+public void deleteCourse(int courseNum){
+    String sql = "DELETE FROM Course WHERE CourseNum = ?";
+
+    try(PreparedStatement pstmt = conn.prepareStatement(sql)){
+        pstmt.setInt(1, courseNum);
+
+        int rowsAffected = pstmt.executeUpdate();
+        if(rowsAffected > 0){
+            System.out.println("Course deleted successfully.");
+        } else {
+            System.out.println("No course found with CourseNum: " + courseNum);
+        }
+    } catch(SQLException e){
+        System.out.println("Error deleting course: " + e.getMessage());
     }
-
 }
