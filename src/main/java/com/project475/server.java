@@ -84,6 +84,56 @@ public class server {
         }
     }
 
+    public String dropStudent(int studentNum) {
+        Map<String, Object> data = new HashMap<>();
+        data.put ("Active", false);
+        return this.performUpdate("Student", "StudentNum", studentNum, data);
+    }
+
+    // Takes a list of students to create or update. If a student with the given StudentNum already exists, that student's information will be updated.
+    // If not, a new student will be created.
+    public String crupdateStudents(List<Map<String, Object>> students) {
+    String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) " +
+                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                 "ON CONFLICT (StudentNum) DO UPDATE SET " +
+                 "FirstName = EXCLUDED.FirstName, " +
+                 "LastName = EXCLUDED.LastName, " +
+                 "Email = EXCLUDED.Email, " +
+                 "PhoneNum = EXCLUDED.PhoneNum, " +
+                 "isActive = EXCLUDED.isActive;";
+
+    try {
+        conn.setAutoCommit(false); // START TRANSACTION
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (Map<String, Object> s : students) {
+                pstmt.setInt(1, (int) s.get("StudentNum"));
+                pstmt.setString(2, (String) s.get("FirstName"));
+                pstmt.setString(3, (String) s.get("LastName"));
+                pstmt.setString(4, (String) s.get("Email"));
+                pstmt.setString(5, (String) s.get("PhoneNum"));
+                pstmt.setString(6, (String) s.get("Street"));
+                pstmt.setString(7, (String) s.get("Zipcode"));
+                pstmt.setString(8, (String) s.get("StateID"));
+                pstmt.setString(9, (String) s.get("ClassStandingID"));
+                pstmt.setBoolean(10, (boolean) s.getOrDefault("isActive", true));
+                
+                pstmt.addBatch(); // Add to the local batch
+            }
+            pstmt.executeBatch(); // Send the entire batch to the DB
+        }
+
+        conn.commit(); // FINISH TRANSACTION
+        return "SUCCESS: Processed " + students.size() + " students.";
+
+    } catch (SQLException e) {
+        try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+        return "FAILURE: Aborted and rolled back. Error: " + e.getMessage();
+    } finally {
+        try { conn.setAutoCommit(true); } catch (SQLException e) { e.printStackTrace(); }
+    }
+}
+
     public void addAssignments(String name, String gradeCatName, String dueDate, int courseNum) {
         String findIdSql = "SELECT gc.ID FROM GradeCategory gc " +
                 "JOIN Course c ON gc.CourseID = c.ID " +
@@ -338,7 +388,7 @@ public class server {
         }
     }
 
-    // Helper to perform updates on any table. 
+    // Helper to perform updates on Student table. 
     // Takes the table name, the primary key column name, the id of the row to update, and a map of column names to new values.
     // Only updates columns that are included in the map. Columns not included will remain unchanged.
     private String performUpdate(String table, String pkColumn, Object id, Map<String, Object> fields) {
