@@ -491,40 +491,6 @@ public void updateTeacher(int teacherNum, String firstName, String lastName, Str
     }
 }
 
-public void deactivateTeacher(int teacherNum) {
-    String sql = "UPDATE Teacher SET Active=false WHERE TeacherNum=?";
-
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setInt(1, teacherNum);
-
-        int rowsAffected = pstmt.executeUpdate();
-        if (rowsAffected > 0) {
-            System.out.println("Teacher set to inactive.");
-        } else {
-            System.out.println("No teacher found with TeacherNum: " + teacherNum);
-        }
-    } catch (SQLException e) {
-        System.out.println("Error updating teacher: " + e.getMessage());
-    }
-}
-
-public void activateTeacher(int teacherNum) {
-    String sql = "UPDATE Teacher SET Active=true WHERE TeacherNum=?";
-
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setInt(1, teacherNum);
-
-        int rowsAffected = pstmt.executeUpdate();
-        if (rowsAffected > 0) {
-            System.out.println("Teacher set to active.");
-        } else {
-            System.out.println("No teacher found with TeacherNum: " + teacherNum);
-        }
-    } catch (SQLException e) {
-        System.out.println("Error updating teacher: " + e.getMessage());
-    }
-}
-
 //Ask Alan for help with this one, need to check if course offering exists before creating course, also need to check if teacher exists and is active before creating course
 public void createCourse(int courseNum, String courseName, int teacherNum, int capacity, String timeSlotID){
     String findCourseOfferingNameSQL = "SELECT CourseOffering.name FROM CourseOffering" +
@@ -532,11 +498,46 @@ public void createCourse(int courseNum, String courseName, int teacherNum, int c
     
     String insertSQL = "INSERT INTO Course(CourseNum, CourseName, TeacherNum, Capacity, TimeSlotID) VALUES (?, ?, ?, ?, ?)";
 
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setInt(1, courseNum);
-        pstmt.setString(2,findCourseOfferingNameSQL);
+    try{
+        int categoryId = -1;
+        try(PreparedStatement idStmt = conn.prepareStatement(findCourseOfferingNameSQL)){
+            idStmt.setString(1, courseName)
+            idStmt.setInt(2, courseNum);
+            ResultSet rs = idStmt.executeQuery();
 
-                
+            if(rs.next()){
+                categoryId = rs.getInt("ID");
+            } else {
+                System.out.println("Error: Course Offering or Course not found.");
+                return;
+            }
+        }
+        try(PreparedStatement pstmt = conn.prepareStatement(insertSQL)){
+            pstmt.setInt(1, teacherNum);
+            pstmt.setInt(2, capacity);
+            pstmt.setString(3, timeSlotID);
+
+            pstmt.executeUpdate();
+            System.out.println("Course created successfully!");
+        }
+    } catch(SQLException e){
+        e.printStackTrace();
+    }          
 }
 
+public void deleteCourse(int courseNum){
+    String sql = "DELETE FROM Course WHERE CourseNum = ?";
+
+    try(PreparedStatement pstmt = conn.prepareStatement(sql)){
+        pstmt.setInt(1, courseNum);
+
+        int rowsAffected = pstmt.executeUpdate();
+        if(rowsAffected > 0){
+            System.out.println("Course deleted successfully.");
+        } else {
+            System.out.println("No course found with CourseNum: " + courseNum);
+        }
+    } catch(SQLException e){
+        System.out.println("Error deleting course: " + e.getMessage());
+    }
 }
