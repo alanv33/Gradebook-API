@@ -10,7 +10,6 @@ public class client {
     public client() {
         this.myDbServer = new server();
     }
-
     public void addAssignments_Client(Scanner sc) {
         System.out.println("Enter an assignment Name: ");
         String name = sc.nextLine();

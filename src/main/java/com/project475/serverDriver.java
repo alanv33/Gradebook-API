@@ -6,7 +6,11 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Scanner;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class serverDriver {
+
+
     public static void main(String[] args) {
         int userInput = -1;
         client client = new client();
