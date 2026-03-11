@@ -77,7 +77,6 @@ public class server {
             pstmt.setString(7, stateId);
             pstmt.setString(8, classStandingId);
             pstmt.setInt(9, studentNum);
-            pstmt.setInt(9, studentNum);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
@@ -744,39 +743,23 @@ public class server {
     }
 
 
-    //Ask Alan for help with this one, need to check if course offering exists before creating course, also need to check if teacher exists and is active before creating course
-    public void createCourse(int courseNum, String courseName, int teacherNum, int capacity, String timeSlotID){
-        String findCourseOfferingNameSQL = "SELECT CourseOffering.name FROM CourseOffering" +
-                    "JOIN Course ON Course.CourseOfferingID = CourseOffering.ID";
+    public void createCourse(int courseNum, int courseOfferingID, int teacherNum, int capacity, String timeSlotID) {
+        String sql = "INSERT INTO Course (CourseNum, CourseOfferingID, TeacherID, Capacity, TimeSlotID) " +
+                    "VALUES (?, ?, (SELECT ID FROM Teacher WHERE TeacherNum = ?), ?, ?)";
         
-        String insertSQL = "INSERT INTO Course(CourseNum, CourseName, TeacherNum, Capacity, TimeSlotID) VALUES (?, ?, ?, ?, ?)";
-
-    try{
-        int categoryId = -1;
-        try(PreparedStatement idStmt = conn.prepareStatement(findCourseOfferingNameSQL)){
-            idStmt.setString(1, courseName);
-            idStmt.setInt(2, courseNum);
-            ResultSet rs = idStmt.executeQuery();
-
-            if(rs.next()){
-                categoryId = rs.getInt("ID");
-            } else {
-                System.out.println("Error: Course Offering or Course not found.");
-                return;
-            }
-        }
-        try(PreparedStatement pstmt = conn.prepareStatement(insertSQL)){
-            pstmt.setInt(1, teacherNum);
-            pstmt.setInt(2, capacity);
-            pstmt.setString(3, timeSlotID);
-
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, courseNum);
+            pstmt.setInt(2, courseOfferingID);
+            pstmt.setInt(3, teacherNum);
+            pstmt.setInt(4, capacity);
+            pstmt.setString(5, timeSlotID);
+            
             pstmt.executeUpdate();
-            System.out.println("Course created successfully!");
+            System.out.println("Course created successfully.");
+        } catch (SQLException e) {
+            System.out.println("Error creating course: " + e.getMessage());
         }
-    } catch(SQLException e){
-        e.printStackTrace();
-    }          
-}
+    }
 
     public void deleteCourse(int courseNum) {
         String sql = "DELETE FROM Course WHERE CourseNum = ?";
@@ -792,6 +775,101 @@ public class server {
             }
         } catch (SQLException e) {
             System.out.println("Error deleting course: " + e.getMessage());
+        }
+    }
+
+    public void updateCourse(int courseNum, int courseOfferingID, int teacherNum, int capacity, String timeSlotID) {
+        String sql = "UPDATE Course SET CourseOfferingID=?, TeacherID=(SELECT ID FROM Teacher WHERE TeacherNum=?), " +
+                    "Capacity=?, TimeSlotID=? WHERE CourseNum=?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, courseOfferingID);
+            pstmt.setInt(2, teacherNum);
+            pstmt.setInt(3, capacity);
+            pstmt.setString(4, timeSlotID);
+            pstmt.setInt(5, courseNum);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Course updated successfully.");
+            } else {
+                System.out.println("No course found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating course: " + e.getMessage());
+        }
+    }
+
+    public void createCourseOffering(String name, boolean offered) {
+        String sql = "INSERT INTO CourseOffering (Name, Offered) VALUES (?, ?)";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, name);
+            pstmt.setBoolean(2, offered);
+            
+            pstmt.executeUpdate();
+            System.out.println("Course offering created successfully.");
+        } catch (SQLException e) {
+            System.out.println("Error creating course offering: " + e.getMessage());
+        }
+    }
+
+    public void updateCourseOffering(String name, boolean offered) {
+        String sql = "UPDATE CourseOffering SET Offered=? WHERE Name=?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setBoolean(1, offered);
+            pstmt.setString(2, name);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Course offering updated successfully.");
+            } else {
+                System.out.println("No course offering found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating course offering: " + e.getMessage());
+        }
+    }
+
+    public void deleteCourseOffering(String name) {
+        String sql = "UPDATE CourseOffering SET Offered=false WHERE Name=?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, name);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Course offering deleted successfully.");
+            } else {
+                System.out.println("No course offering found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error deleting course offering: " + e.getMessage());
+        }
+    }
+
+    public void listAssignmentsForStudentInSingleCourse(int studentNum, int courseNum) {
+        String sql = "SELECT a.Name, gc.Name AS Category, sg.Grade, a.DueDate " +
+                    "FROM Assignment a " +
+                    "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                    "JOIN Course c ON gc.CourseID = c.ID " +
+                    "LEFT JOIN StudentGrade sg ON a.ID = sg.AssignmentID AND sg.StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
+                    "WHERE c.CourseNum = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentNum);
+            pstmt.setInt(2, courseNum);
+            
+            ResultSet rs = pstmt.executeQuery();
+            System.out.println("Assignments for Student #" + studentNum + " in Course #" + courseNum + ":");
+            while (rs.next()) {
+                System.out.println(rs.getString("Name") + " | Category: " + rs.getString("Category") + 
+                                " | Grade: " + (rs.getObject("Grade") != null ? rs.getDouble("Grade") : "Not graded") +
+                                " | Due: " + rs.getString("DueDate"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Error listing assignments: " + e.getMessage());
         }
     }
 }
