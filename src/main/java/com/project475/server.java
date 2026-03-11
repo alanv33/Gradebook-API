@@ -172,16 +172,16 @@ public class server {
             colName = "CategoryID";
             String gradeCatName = newVal.get(0);
             String courseNum = newVal.get(1);
-            String findGCatID = "SELECT GradeCategory.ID FROM GradeCategory" 
-                                + " JOIN Course ON (Course.ID = GradeCategory.CourseID)" 
-                                + " WHERE Course.courseNum= ? AND GradeCategory.name = ?";
+            String findGCatID = "SELECT GradeCategory.ID FROM GradeCategory"
+                    + " JOIN Course ON (Course.ID = GradeCategory.CourseID)"
+                    + " WHERE Course.courseNum= ? AND GradeCategory.name = ?";
 
             try (PreparedStatement pstmt = conn.prepareStatement(findGCatID)) {
                 pstmt.setString(1, courseNum);
                 pstmt.setString(2, gradeCatName);
                 ResultSet rs = pstmt.executeQuery();
 
-                if(rs.next()){
+                if (rs.next()) {
                     gradeCatID = rs.getInt("ID");
                     valueToSet = gradeCatID;
                 } else {
@@ -205,7 +205,7 @@ public class server {
             pstmt.setString(2, name);
 
             int rows = pstmt.executeUpdate();
-            if(rows > 0){
+            if (rows > 0) {
                 System.out.println("Assignment Update Successful");
             }
         } catch (SQLException e) {
@@ -213,7 +213,106 @@ public class server {
         }
     }
 
+    public void deleteAssignment(String assignmentName, String courseName) {
+        String sql = "DELETE FROM Assignment WHERE name = ? AND categoryID IN" +
+                " (SELECT gradeCategory.ID FROM gradeCategory" +
+                " JOIN Course ON (Course.ID = gradeCategory.courseID)" +
+                " WHERE course.name = ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, assignmentName);
+            pstmt.setString(2, courseName);
 
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void listAllCourseAssignments(int courseNum) {
+        String sql = "SELECT Assignment.name AS \"Assignment Name\", " +
+                " gradeCategory.name AS \"Grade Category\", " +
+                " gradeCategory.weight, " +
+                " Assignment.dueDate " +
+                " FROM Course " +
+                " JOIN gradeCategory ON (gradeCategory.courseID = Course.ID) " +
+                " JOIN Assignment ON (Assignment.categoryID = gradeCategory.ID) " +
+                " WHERE Course.courseNum = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, courseNum);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("Assignments for Course #" + courseNum + ":");
+            System.out.println("------------------------------------------");
+
+            while (rs.next()) {
+                String name = rs.getString("Assignment Name");
+                String cat = rs.getString("Grade Category");
+                double weight = rs.getDouble("weight");
+                String date = rs.getString("dueDate");
+
+                System.out.println(name + " | Category: " + cat + " | Weight: " + weight + "% | Due: " + date);
+            }
+        } catch (SQLException e) {
+            System.out.println("Query Error: " + e.getMessage());
+        }
+    }
+
+    public void listCoursesForStudent(int studentNum) {
+        String sql = "SELECT CourseOffering.name AS \"Course Name\"," +
+                " Teacher.firstname AS \"First Name\"," +
+                " Teacher.lastName AS \"Last Name\"," +
+                " Course.Capacity," +
+                " Course.timeSlotID" +
+                " FROM Course " +
+                " JOIN Enrollment ON (enrollment.courseID = Course.ID) " +
+                " JOIN Student ON (Student.ID = enrollment.studentID) " +
+                " JOIN Teacher ON (Teacher.ID = course.teacherID) " +
+                " JOIN courseOffering ON (courseOffering.ID = course.courseOfferingID) " +
+                " WHERE student.studentNum = ?" +
+                " ORDER BY course.timeSlotID";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentNum);
+            ResultSet rs = pstmt.executeQuery();
+
+            System.out.println("Courses for Student #" + studentNum + ":");
+            System.out.println("------------------------------------------");
+
+            while (rs.next()) {
+                String courseName = rs.getString("Course Name");
+                String Teacher = rs.getString("First Name") + " " + rs.getString("Last Name");
+                int capacity = rs.getInt("capacity");
+                String timeSlot = rs.getString("timeSlotID");
+
+                System.out.println("Course: " + courseName + " | " + "Teacher: " + Teacher + " | " + "Capacity: "
+                        + capacity + " | " + "Time Slot: " + timeSlot);
+
+            }
+        } catch (SQLException e) {
+            System.out.println("Query Error: " + e.getMessage());
+        }
+    }
+
+    // Used to reactivate a student that was dropped. Sets the student's isActive
+    // status to true.
+    public void activateStudent(int studentNum) {
+        String sql = "UPDATE Student SET Active=true WHERE StudentNum=?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, studentNum);
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Student set to active.");
+            } else {
+                System.out.println("No student found with StudentNum: " + studentNum);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating student: " + e.getMessage());
+        }
+    }
 
     public void createGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
 
