@@ -155,20 +155,21 @@ public class server {
         }
     }
 
-    public String updateAssigment_Server(String name, String column, ArrayList<String> newVal) {
+    public String updateAssigment_Server(String name, int courseNum, String column, ArrayList<String> newVal) {
         int gradeCatID = -1;
         String colName = "";
         Object valueToSet = null;
-        if (column.equals("Grade Category")) {
+
+        if (column.equals("2")) {
             colName = "CategoryID";
             String gradeCatName = newVal.get(0);
-            String courseNum = newVal.get(1);
+
             String findGCatID = "SELECT GradeCategory.ID FROM GradeCategory"
                     + " JOIN Course ON (Course.ID = GradeCategory.CourseID)"
-                    + " WHERE Course.courseNum= ? AND GradeCategory.name = ?";
+                    + " WHERE Course.courseNum = ? AND GradeCategory.name = ?";
 
             try (PreparedStatement pstmt = conn.prepareStatement(findGCatID)) {
-                pstmt.setString(1, courseNum);
+                pstmt.setInt(1, courseNum); // Use the new courseNum parameter
                 pstmt.setString(2, gradeCatName);
                 ResultSet rs = pstmt.executeQuery();
 
@@ -176,32 +177,48 @@ public class server {
                     gradeCatID = rs.getInt("ID");
                     valueToSet = gradeCatID;
                 } else {
-                    return "Error: Grade Category not found";
+                    return "Error: Grade Category not found for that course.";
                 }
-
             } catch (SQLException e) {
                 return e.getMessage();
             }
-        } else {
-            colName = column;
+
+        } else if (column.equals("1")) {
+            colName = "Name";
             valueToSet = newVal.get(0);
 
+        } else if (column.equals("3")) {
+            colName = "DueDate";
+            try {
+                valueToSet = java.sql.Timestamp.valueOf(newVal.get(0));
+            } catch (IllegalArgumentException e) {
+                return "Error: Date must be in format YYYY-MM-DD HH:MM:SS";
+            }
+        } else {
+            return "Error: Invalid column selection.";
         }
-        String sql = "UPDATE Assignment SET " + colName + " =? WHERE name=?";
+
+        String sql = "UPDATE Assignment SET " + colName + " = ? "
+                + "WHERE name ILIKE ? AND CategoryID IN ("
+                + "    SELECT GradeCategory.ID FROM GradeCategory "
+                + "    JOIN Course ON Course.ID = GradeCategory.CourseID "
+                + "    WHERE Course.courseNum = ?"
+                + ")";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setObject(1, valueToSet);
             pstmt.setString(2, name);
+            pstmt.setInt(3, courseNum); // Plug in the courseNum to the subquery
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                return ("Assignment Update Successful");
+                return "Assignment Update Successful";
             }
         } catch (SQLException e) {
             return e.getMessage();
         }
 
-        return "Assignment Update Failed";
+        return "Assignment Update Failed (Assignment not found in that course)";
     }
 
     public String deleteAssignment_Server(String assignmentName, int courseNum) {
@@ -268,8 +285,8 @@ public class server {
                 " JOIN courseOffering ON (courseOffering.ID = course.courseOfferingID) " +
                 " WHERE student.studentNum = ?" +
                 " ORDER BY course.timeSlotID";
-        
-                StringBuilder output = new StringBuilder();
+
+        StringBuilder output = new StringBuilder();
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentNum);
