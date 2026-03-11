@@ -1,16 +1,42 @@
 package com.project475;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class server {
     private Connection conn;
 
-    public server(Connection conn) {
-        this.conn = conn;
+    public server() {
+        /* -- DO NOT TOUCH -- */
+        Dotenv dotenv = Dotenv.load();
+        String url = dotenv.get("DB_URL");
+
+        // Attempt connection to DB
+        try {
+            this.conn = DriverManager.getConnection(url);
+            System.out.println("Connected to Supabase!");
+            Statement stmt = conn.createStatement();
+
+            // Test command
+            ResultSet rs = stmt.executeQuery("SELECT NOW();");
+
+            if (rs.next()) {
+                System.out.println("Database Time: " + rs.getTimestamp(1));
+                System.out.println("Test Successful!");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Connection failed!");
+            // This will tell you if the password was wrong or the URL was invalid
+            e.printStackTrace();
+        }
     }
 
     // Create a new student in the database. ID must be unique and is used to
@@ -444,99 +470,104 @@ public class server {
         }
     }
 
-    public void createTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email, String street, String zipcode, String stateId, boolean isActive) {
-    String sql = "INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, Active) " +
-                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    public void createTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email,
+            String street, String zipcode, String stateId, boolean isActive) {
+        String sql = "INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, Active) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setInt(1, teacherNum);
-        pstmt.setString(2, firstName);
-        pstmt.setString(3, lastName);
-        pstmt.setString(4, phoneNum);
-        pstmt.setString(5, email);
-        pstmt.setString(6, street);
-        pstmt.setString(7, zipcode);       
-        pstmt.setString(8, stateId);
-        pstmt.setBoolean(9, isActive);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, teacherNum);
+            pstmt.setString(2, firstName);
+            pstmt.setString(3, lastName);
+            pstmt.setString(4, phoneNum);
+            pstmt.setString(5, email);
+            pstmt.setString(6, street);
+            pstmt.setString(7, zipcode);
+            pstmt.setString(8, stateId);
+            pstmt.setBoolean(9, isActive);
 
-        pstmt.executeUpdate();
-        System.out.println("Teacher created successfully.");
-    } catch (SQLException e) {
-        System.out.println("Error creating teacher: " + e.getMessage());
-    }
-}
-
-public void updateTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email, String street, String zipcode, String stateId, boolean isActive) {
-    String sql = "UPDATE Teacher SET FirstName=?, LastName=?, PhoneNum=?, Email=?, Street=?, Zipcode=?, StateID=?, Active=? WHERE TeacherNum=?";
-
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setString(1, firstName);
-        pstmt.setString(2, lastName);
-        pstmt.setString(3, phoneNum);
-        pstmt.setString(4, email);
-        pstmt.setString(5, street);
-        pstmt.setString(6, zipcode);       
-        pstmt.setString(7, stateId);
-        pstmt.setBoolean(8, isActive);
-        pstmt.setInt(9, teacherNum);
-
-        int rowsAffected = pstmt.executeUpdate();
-        if (rowsAffected > 0) {
-            System.out.println("Teacher updated successfully.");
-        } else {
-            System.out.println("No teacher found with TeacherNum: " + teacherNum);
+            pstmt.executeUpdate();
+            System.out.println("Teacher created successfully.");
+        } catch (SQLException e) {
+            System.out.println("Error creating teacher: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        System.out.println("Error updating teacher: " + e.getMessage());
     }
-}
 
-public void deactivateTeacher(int teacherNum) {
-    String sql = "UPDATE Teacher SET Active=false WHERE TeacherNum=?";
+    public void updateTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email,
+            String street, String zipcode, String stateId, boolean isActive) {
+        String sql = "UPDATE Teacher SET FirstName=?, LastName=?, PhoneNum=?, Email=?, Street=?, Zipcode=?, StateID=?, Active=? WHERE TeacherNum=?";
 
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setInt(1, teacherNum);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, firstName);
+            pstmt.setString(2, lastName);
+            pstmt.setString(3, phoneNum);
+            pstmt.setString(4, email);
+            pstmt.setString(5, street);
+            pstmt.setString(6, zipcode);
+            pstmt.setString(7, stateId);
+            pstmt.setBoolean(8, isActive);
+            pstmt.setInt(9, teacherNum);
 
-        int rowsAffected = pstmt.executeUpdate();
-        if (rowsAffected > 0) {
-            System.out.println("Teacher set to inactive.");
-        } else {
-            System.out.println("No teacher found with TeacherNum: " + teacherNum);
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Teacher updated successfully.");
+            } else {
+                System.out.println("No teacher found with TeacherNum: " + teacherNum);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating teacher: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        System.out.println("Error updating teacher: " + e.getMessage());
     }
-}
 
-public void activateTeacher(int teacherNum) {
-    String sql = "UPDATE Teacher SET Active=true WHERE TeacherNum=?";
+    public void deactivateTeacher(int teacherNum) {
+        String sql = "UPDATE Teacher SET Active=false WHERE TeacherNum=?";
 
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setInt(1, teacherNum);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, teacherNum);
 
-        int rowsAffected = pstmt.executeUpdate();
-        if (rowsAffected > 0) {
-            System.out.println("Teacher set to active.");
-        } else {
-            System.out.println("No teacher found with TeacherNum: " + teacherNum);
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Teacher set to inactive.");
+            } else {
+                System.out.println("No teacher found with TeacherNum: " + teacherNum);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating teacher: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        System.out.println("Error updating teacher: " + e.getMessage());
     }
-}
 
-//Ask Alan for help with this one, need to check if course offering exists before creating course, also need to check if teacher exists and is active before creating course
-public void createCourse(int courseNum, String courseName, int teacherNum, int capacity, String timeSlotID){
-    String findCourseOfferingNameSQL = "SELECT CourseOffering.name FROM CourseOffering" +
+    public void activateTeacher(int teacherNum) {
+        String sql = "UPDATE Teacher SET Active=true WHERE TeacherNum=?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, teacherNum);
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Teacher set to active.");
+            } else {
+                System.out.println("No teacher found with TeacherNum: " + teacherNum);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating teacher: " + e.getMessage());
+        }
+    }
+
+    // Ask Alan for help with this one, need to check if course offering exists
+    // before creating course, also need to check if teacher exists and is active
+    // before creating course
+    public void createCourse(int courseNum, String courseName, int teacherNum, int capacity, String timeSlotID) {
+        String findCourseOfferingNameSQL = "SELECT CourseOffering.name FROM CourseOffering" +
                 "JOIN Course ON Course.CourseOfferingID = CourseOffering.ID";
-    
-    String insertSQL = "INSERT INTO Course(CourseNum, CourseName, TeacherNum, Capacity, TimeSlotID) VALUES (?, ?, ?, ?, ?)";
 
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setInt(1, courseNum);
-        pstmt.setString(2,findCourseOfferingNameSQL);
+        String insertSQL = "INSERT INTO Course(CourseNum, CourseName, TeacherNum, Capacity, TimeSlotID) VALUES (?, ?, ?, ?, ?)";
 
-                
-}
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, courseNum);
+            pstmt.setString(2, findCourseOfferingNameSQL);
+        }
+
+    }
 
 }

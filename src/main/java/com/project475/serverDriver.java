@@ -11,32 +11,6 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 public class serverDriver {
     public static void main(String[] args) {
-        /* -- DO NOT TOUCH --  */
-        Dotenv dotenv = Dotenv.load();
-        String url = dotenv.get("DB_URL");
-
-        // Attempt connection to DB
-        try (Connection conn = DriverManager.getConnection(url)) {    // Connection object (Kinda like a scanner) 
-            System.out.println("Connected to Supabase!");
-
-
-            // This can only be used once. Each Statement is one and done
-            // But also not really. If you wanna know more lmk
-            Statement stmt = conn.createStatement();
-            
-            // Test command
-            ResultSet rs = stmt.executeQuery("SELECT NOW();");
-
-            if (rs.next()) {
-                System.out.println("Database Time: " + rs.getTimestamp(1));
-                System.out.println("Test Successful!");
-            }
-
-        } catch (Exception e) {
-            System.err.println("Connection failed!");
-            // This will tell you if the password was wrong or the URL was invalid
-            e.printStackTrace();
-        }
     }
 
 
