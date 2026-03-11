@@ -5,6 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class server {
     private Connection conn;
@@ -16,13 +19,13 @@ public class server {
     // Create a new student in the database. ID must be unique and is used to
     // identify the student for updates and deletes.
     // Remove all ID's, auto assigned by server
-    public void createStudent(int studentNum, String firstName, String lastName,
+    public String createStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId) {
 
-        String sql = "INSERT INTO Student (ID, StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID) "
+        String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID) "
                 +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -38,43 +41,33 @@ public class server {
 
             pstmt.executeUpdate();
             System.out.println("Student created successfully.");
+            return "Student created successfully.";
         } catch (SQLException e) {
             System.out.println("Error creating student: " + e.getMessage());
+            return "Error creating student: " + e.getMessage();
         }
     }
 
-    // Update student information. ID is used to find the student and cannot be
-    // changed.
-    public void updateStudent(int studentNum, String firstName, String lastName,
+    // Update student information. Calls the performUpdate helper function to update specified fields.
+    // Repkaced deactivate and activate student
+    public String updateStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId) {
 
-        String sql = "UPDATE Student SET StudentNum=?, FirstName=?, LastName=?, Email=?, PhoneNum=?, Street=?, Zipcode=?, StateID=?, ClassStandingID=? WHERE ID=?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, firstName);
-            pstmt.setString(2, lastName);
-            pstmt.setString(3, email);
-            pstmt.setString(4, phoneNum);
-            pstmt.setString(5, street);
-            pstmt.setString(6, zipcode);
-            pstmt.setString(7, stateId);
-            pstmt.setString(8, classStandingId);
-
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Student updated successfully.");
-            } else {
-                System.out.println("No student found with student number: " + studentNum);
-            }
-        } catch (SQLException e) {
-            System.out.println("Error updating student: " + e.getMessage());
+        Map<String, Object> data = new HashMap<>(); 
+                data.put("FirstName", firstName);
+                data.put("LastName", lastName);
+                data.put("Email", email);
+                data.put("PhoneNum", phoneNum);
+                data.put("Street", street);
+                data.put("Zipcode", zipcode);
+                data.put("StateID", stateId);
+                data.put("ClassStandingID", classStandingId);
+        return performUpdate("Student", "StudentNum", studentNum, data);
         }
-    }
 
     // Enrolls a student in a course. Student and course must already exist.
-    public void enrollStudent(int studentId, int courseId) {
+    public String enrollStudent(int studentId, int courseId) {
         String sql = "INSERT INTO Enrollment (StudentID, CourseID) VALUES (?, ?)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -84,28 +77,10 @@ public class server {
 
             pstmt.executeUpdate();
             System.out.println("Student enrolled successfully.");
+            return "Student enrolled successfully.";
         } catch (SQLException e) {
             System.out.println("Error enrolling student: " + e.getMessage());
-        }
-    }
-
-    // Sets the student's isActive status to false. Student is not deleted from the
-    // database and can be reactivated by setting isActive to true.
-    public void deactivateStudent(int studentNum) {
-        String sql = "UPDATE Student SET Active=false WHERE StudentNum=?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, studentNum);
-
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Student set to inactive.");
-            } else {
-                System.out.println("No student found with StudentNum: " + studentNum);
-            }
-        } catch (SQLException e) {
-            System.out.println("Error updating student: " + e.getMessage());
+            return "Error enrolling student: " + e.getMessage();
         }
     }
 
@@ -363,4 +338,41 @@ public class server {
         }
     }
 
+    // Helper to perform updates on any table. 
+    // Takes the table name, the primary key column name, the id of the row to update, and a map of column names to new values.
+    // Only updates columns that are included in the map. Columns not included will remain unchanged.
+    private String performUpdate(String table, String pkColumn, Object id, Map<String, Object> fields) {
+    if (fields == null || fields.isEmpty()) {
+        return "No fields to update.";
+    }
+
+    // Capture keys in a list to guarantee identical order for both loops
+    List<String> columnNames = new ArrayList<>(fields.keySet());
+    List<String> setClauses = new ArrayList<>();
+
+    for (String col : columnNames) {
+        // COALESCE only allows updating the fields included in the map. If a field is not included, it will be set to its current value (i.e. remain unchanged)
+        setClauses.add(String.format("\"%s\" = COALESCE(?, \"%s\")", col, col));
+    }     
+
+    String sql = String.format("UPDATE \"%s\" SET %s WHERE \"%s\" = ?",
+                                     table, String.join(", ", setClauses), pkColumn);
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        int i = 1;
+        
+        // Use the exact same list to pull the VALUES
+        for (String col : columnNames) {
+            // Get the actual data (the Object) using the key
+            pstmt.setObject(i++, fields.get(col)); 
+        }
+        
+        pstmt.setObject(i, id); // The final ? for the WHERE clause
+
+        int rowsAffected = pstmt.executeUpdate();
+        return rowsAffected > 0 ? "Update successful." : "Record not found.";
+    } catch (SQLException e) {
+        return "Error performing update: " + e.getMessage();
+    }
+}
 }
