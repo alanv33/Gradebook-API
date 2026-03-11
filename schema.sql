@@ -1,6 +1,6 @@
 /*
 -- Uncomment this section of the code when testing on your machine --
--- Keep this sectiom commented out if running on the server -- 
+-- Keep this section commented out if running on the server -- 
 \c postgres
 
 CREATE DATABASE dbAnything;
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS State(
 );
 
 CREATE TABLE IF NOT EXISTS CourseOffering(
-    ID          INTEGER NOT NULL,
+    ID          SERIAL NOT NULL,
     Name        VARCHAR(20) NOT NULL UNIQUE,
     Offered     BOOLEAN NOT NULL,
 
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS CourseOffering(
 );
 
 CREATE TABLE IF NOT EXISTS Student(
-    ID          INTEGER NOT NULL,
+    ID          SERIAL NOT NULL,
     StudentNum  INTEGER NOT NULL UNIQUE,
     FirstName   VARCHAR(40) NOT NULL,
     LastName    VARCHAR(40) NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS Student(
 );
 
 CREATE TABLE IF NOT EXISTS Teacher(
-    ID          INTEGER NOT NULL,
+    ID          SERIAL NOT NULL,
     TeacherNum  INTEGER NOT NULL UNIQUE,
     FirstName   VARCHAR(40) NOT NULL,
     LastName    VARCHAR(40) NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS Teacher(
 
 
 CREATE TABLE IF NOT EXISTS Course(
-    ID          INTEGER NOT NULL,
+    ID          SERIAL NOT NULL,
     CourseNum   INTEGER NOT NULL,
     CourseOfferingID    INTEGER NOT NULL,
     TeacherID   INTEGER NOT NULL,
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS Course(
 );
 
 CREATE TABLE IF NOT EXISTS GradeCategory(
-    ID          INTEGER NOT NULL,
+    ID          SERIAL NOT NULL,
     Name        VARCHAR(20) NOT NULL,
     Weight      DECIMAL(2,0) NOT NULL,
     CourseID    INTEGER NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS Enrollment(
 );
 
 CREATE TABLE IF NOT EXISTS Assignment(
-    ID          INTEGER NOT NULL,
+    ID          SERIAL NOT NULL,
     Name        VARCHAR(60) NOT NULL,
     CategoryID  INTEGER NOT NULL,
     DueDate     TIMESTAMP NOT NULL,
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS Assignment(
 );
 
 CREATE TABLE IF NOT EXISTS StudentGrade(
-    ID          INTEGER NOT NULL,
+    ID              SERIAL NOT NULL,
     AssignmentID    INTEGER NOT NULL,
     StudentID       INTEGER NOT NULL,
     Grade           DECIMAL(4,2),

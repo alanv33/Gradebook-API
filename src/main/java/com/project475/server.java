@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class server {
     private Connection conn;
@@ -143,6 +144,55 @@ public class server {
         }
     }
 
+    public void updateAssigment(String name, String column, ArrayList<String> newVal) {
+        int gradeCatID = -1;
+        String colName = "";
+        Object valueToSet = null;
+        if (column.equals("Grade Category")) {
+            colName = "CategoryID";
+            String gradeCatName = newVal.get(0);
+            String courseNum = newVal.get(1);
+            String findGCatID = "SELECT GradeCategory.ID FROM GradeCategory" 
+                                + " JOIN Course ON (Course.ID = GradeCategory.CourseID)" 
+                                + " WHERE Course.courseNum= ? AND GradeCategory.name = ?";
+
+            try (PreparedStatement pstmt = conn.prepareStatement(findGCatID)) {
+                pstmt.setString(1, courseNum);
+                pstmt.setString(2, gradeCatName);
+                ResultSet rs = pstmt.executeQuery();
+
+                if(rs.next()){
+                    gradeCatID = rs.getInt("ID");
+                    valueToSet = gradeCatID;
+                } else {
+                    System.out.println("Error: Grade Category not found");
+                    return;
+                }
+
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+                return;
+            }
+        } else {
+            colName = column;
+            valueToSet = newVal.get(0);
+
+        }
+        String sql = "UPDATE Assignment SET " + colName + " =? WHERE name=?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setObject(1, valueToSet);
+            pstmt.setString(2, name);
+
+            int rows = pstmt.executeUpdate();
+            if(rows > 0){
+                System.out.println("Assignment Update Successful");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     // Used to reactivate a student that was dropped. Sets the student's isActive
     // status to true.
     public void activateStudent(int studentNum) {
@@ -203,11 +253,11 @@ public class server {
 
     public void deleteGradeCategory(int courseNumber, String gradeCategoryName) {
         String sql = "DELETE FROM GradeCategory WHERE CourseID = (SELECT ID FROM Course WHERE CourseNum = ?) AND Name = ?";
-        
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, courseNumber);
             pstmt.setString(2, gradeCategoryName);
-            
+
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Grade Category deleted successfully.");
@@ -221,12 +271,12 @@ public class server {
 
     public void dropStudent(int studentNum, int courseNum) {
         String sql = "DELETE FROM Enrollment WHERE StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
-                    "AND CourseID = (SELECT ID FROM Course WHERE CourseNum = ?)";
-        
+                "AND CourseID = (SELECT ID FROM Course WHERE CourseNum = ?)";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentNum);
             pstmt.setInt(2, courseNum);
-            
+
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Student dropped from course successfully.");
@@ -240,16 +290,16 @@ public class server {
 
     public void updateAssignmentGrade(String assignmentName, int studentNum, int courseNum, double grade) {
         String sql = "UPDATE StudentGrade SET Grade = ? WHERE AssignmentID = " +
-                    "(SELECT a.ID FROM Assignment a JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
-                    "JOIN Course c ON gc.CourseID = c.ID WHERE a.Name = ? AND c.CourseNum = ?) " +
-                    "AND StudentID = (SELECT ID FROM Student WHERE StudentNum = ?)";
-        
+                "(SELECT a.ID FROM Assignment a JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                "JOIN Course c ON gc.CourseID = c.ID WHERE a.Name = ? AND c.CourseNum = ?) " +
+                "AND StudentID = (SELECT ID FROM Student WHERE StudentNum = ?)";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setDouble(1, grade);
             pstmt.setString(2, assignmentName);
             pstmt.setInt(3, courseNum);
             pstmt.setInt(4, studentNum);
-            
+
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Assignment grade updated successfully.");
@@ -263,18 +313,18 @@ public class server {
 
     public Double calculateCourseGrade(int studentNum, int courseNum) {
         String sql = "SELECT SUM(sg.Grade * gc.Weight / 100.0) AS FinalGrade " +
-                    "FROM StudentGrade sg " +
-                    "JOIN Assignment a ON sg.AssignmentID = a.ID " +
-                    "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
-                    "JOIN Course c ON gc.CourseID = c.ID " +
-                    "WHERE sg.StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
-                    "AND c.CourseNum = ? " +
-                    "GROUP BY c.ID";
-        
+                "FROM StudentGrade sg " +
+                "JOIN Assignment a ON sg.AssignmentID = a.ID " +
+                "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                "JOIN Course c ON gc.CourseID = c.ID " +
+                "WHERE sg.StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
+                "AND c.CourseNum = ? " +
+                "GROUP BY c.ID";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentNum);
             pstmt.setInt(2, courseNum);
-            
+
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 double grade = rs.getDouble("FinalGrade");
@@ -292,21 +342,21 @@ public class server {
 
     public void listStudentsInCourse(int courseNum) {
         String sql = "SELECT s.StudentNum, s.FirstName, s.LastName, s.Email " +
-                    "FROM Student s " +
-                    "JOIN Enrollment e ON s.ID = e.StudentID " +
-                    "JOIN Course c ON e.CourseID = c.ID " +
-                    "WHERE c.CourseNum = ? AND s.isActive = true";
-        
+                "FROM Student s " +
+                "JOIN Enrollment e ON s.ID = e.StudentID " +
+                "JOIN Course c ON e.CourseID = c.ID " +
+                "WHERE c.CourseNum = ? AND s.isActive = true";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, courseNum);
-            
+
             ResultSet rs = pstmt.executeQuery();
             System.out.println("Students in course " + courseNum + ":");
             while (rs.next()) {
-                System.out.println(rs.getInt("StudentNum") + " - " + 
-                                rs.getString("FirstName") + " " + 
-                                rs.getString("LastName") + " (" + 
-                                rs.getString("Email") + ")");
+                System.out.println(rs.getInt("StudentNum") + " - " +
+                        rs.getString("FirstName") + " " +
+                        rs.getString("LastName") + " (" +
+                        rs.getString("Email") + ")");
             }
         } catch (SQLException e) {
             System.out.println("Error listing students: " + e.getMessage());
