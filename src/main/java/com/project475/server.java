@@ -6,10 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-
-import io.github.cdimascio.dotenv.Dotenv;
 import java.util.List;
 import java.util.Map;
+
+import io.github.cdimascio.dotenv.Dotenv;
 
 public class server {
     private Connection conn;
@@ -904,4 +904,34 @@ public class server {
             System.out.println("Error listing assignments: " + e.getMessage());
         }
     }
+    public void updateAssignmentGradeForAll(String assignmentName, int courseNum, double grade) {
+    String sql = "UPDATE StudentGrade SET Grade = ? " +
+                 "WHERE AssignmentID = ( " +
+                    "SELECT a.ID FROM Assignment a " +
+                        "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                        "JOIN Course c ON gc.CourseID = c.ID " +
+                    "WHERE a.Name = ? AND c.CourseNum = ? " +") " +
+                 "AND StudentID IN ( " +
+                    "SELECT s.ID FROM Student s " +
+                        "JOIN Enrollment e ON s.ID = e.StudentID " +
+                        "JOIN Course c ON e.CourseID = c.ID " +
+                    "WHERE c.CourseNum = ? " +
+                 ")";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setDouble(1, grade);
+        pstmt.setString(2, assignmentName);
+        pstmt.setInt(3, courseNum);
+        pstmt.setInt(4, courseNum);
+
+        int rowsAffected = pstmt.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Updated grade for " + rowsAffected + " students.");
+        } else {
+            System.out.println("No matching records found.");
+        }
+    } catch (SQLException e) {
+        System.out.println("Error updating grades: " + e.getMessage());
+    }
+}
 }
