@@ -8,12 +8,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class server {
     private Connection conn;
+
     public server() {
         /* -- DO NOT TOUCH -- */
         Dotenv dotenv = Dotenv.load();
@@ -77,7 +77,6 @@ public class server {
             pstmt.setString(7, stateId);
             pstmt.setString(8, classStandingId);
             pstmt.setInt(9, studentNum);
-            pstmt.setInt(9, studentNum);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
@@ -108,50 +107,60 @@ public class server {
         }
     }
 
-    // Takes a list of students to create or update. If a student with the given StudentNum already exists, that student's information will be updated.
+    // Takes a list of students to create or update. If a student with the given
+    // StudentNum already exists, that student's information will be updated.
     // If not, a new student will be created.
     public String crupdateStudents(List<Map<String, Object>> students) {
-    String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) " +
-                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                 "ON CONFLICT (StudentNum) DO UPDATE SET " +
-                 "FirstName = EXCLUDED.FirstName, " +
-                 "LastName = EXCLUDED.LastName, " +
-                 "Email = EXCLUDED.Email, " +
-                 "PhoneNum = EXCLUDED.PhoneNum, " +
-                 "isActive = EXCLUDED.isActive;";
+        String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                "ON CONFLICT (StudentNum) DO UPDATE SET " +
+                "FirstName = EXCLUDED.FirstName, " +
+                "LastName = EXCLUDED.LastName, " +
+                "Email = EXCLUDED.Email, " +
+                "PhoneNum = EXCLUDED.PhoneNum, " +
+                "isActive = EXCLUDED.isActive;";
 
-    try {
+        try {
 
-        conn.setAutoCommit(false); // START TRANSACTION
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (Map<String, Object> s : students) {
-                pstmt.setInt(1, (int) s.get("StudentNum"));
-                pstmt.setString(2, (String) s.get("FirstName"));
-                pstmt.setString(3, (String) s.get("LastName"));
-                pstmt.setString(4, (String) s.get("Email"));
-                pstmt.setString(5, (String) s.get("PhoneNum"));
-                pstmt.setString(6, (String) s.get("Street"));
-                pstmt.setString(7, (String) s.get("Zipcode"));
-                pstmt.setString(8, (String) s.get("StateID"));
-                pstmt.setString(9, (String) s.get("ClassStandingID"));
-                pstmt.setBoolean(10, (boolean) s.getOrDefault("isActive", true));
-                
-                pstmt.addBatch(); // Add to the local batch
+            conn.setAutoCommit(false); // START TRANSACTION
+
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                for (Map<String, Object> s : students) {
+                    pstmt.setInt(1, (int) s.get("StudentNum"));
+                    pstmt.setString(2, (String) s.get("FirstName"));
+                    pstmt.setString(3, (String) s.get("LastName"));
+                    pstmt.setString(4, (String) s.get("Email"));
+                    pstmt.setString(5, (String) s.get("PhoneNum"));
+                    pstmt.setString(6, (String) s.get("Street"));
+                    pstmt.setString(7, (String) s.get("Zipcode"));
+                    pstmt.setString(8, (String) s.get("StateID"));
+                    pstmt.setString(9, (String) s.get("ClassStandingID"));
+                    pstmt.setBoolean(10, (boolean) s.getOrDefault("isActive", true));
+
+                    pstmt.addBatch(); // Add to the local batch
+                }
+                pstmt.executeBatch(); // Send the entire batch to the DB
             }
-            pstmt.executeBatch(); // Send the entire batch to the DB
+
+            conn.commit(); // FINISH TRANSACTION
+            return "SUCCESS: Processed " + students.size() + " students.";
+
+        } catch (SQLException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            return "FAILURE: Aborted and rolled back. Error: " + e.getMessage();
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
-
-        conn.commit(); // FINISH TRANSACTION
-        return "SUCCESS: Processed " + students.size() + " students.";
-
-    } catch (SQLException e) {
-        try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
-        return "FAILURE: Aborted and rolled back. Error: " + e.getMessage();
-    } finally {
-        try { conn.setAutoCommit(true); } catch (SQLException e) { e.printStackTrace(); }
     }
-}
 
     public String addAssignments_Server(String name, String gradeCatName, String dueDate, int courseNum) {
         String findIdSql = "SELECT gc.ID FROM GradeCategory gc " +
@@ -378,6 +387,7 @@ public class server {
             System.out.println("Error creating Grade Category: " + e.getMessage());
         }
     }
+
     public void updateGradeCategory(int courseNumber, String gradeCategoryName, int newWeight) {
         String sql = "UPDATE GradeCategory SET Weight=? WHERE Name=? AND CourseID=(SELECT ID FROM Course WHERE CourseNum=?)";
 
@@ -512,9 +522,11 @@ public class server {
         }
     }
 
-    public void createTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email, String street, String zipcode, String stateId, boolean isActive) {
-        String sql = "INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, Active) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    public void createTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email,
+            String street, String zipcode, String stateId, boolean isActive) {
+        String sql = "INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, Active) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, teacherNum);
@@ -523,7 +535,7 @@ public class server {
             pstmt.setString(4, phoneNum);
             pstmt.setString(5, email);
             pstmt.setString(6, street);
-            pstmt.setString(7, zipcode);       
+            pstmt.setString(7, zipcode);
             pstmt.setString(8, stateId);
             pstmt.setBoolean(9, isActive);
 
@@ -536,10 +548,10 @@ public class server {
 
     public void deleteStudent(int studentNum) {
         String sql = "UPDATE Student SET isActive=false WHERE StudentNum=?";
-        
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentNum);
-            
+
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Student deleted (deactivated) successfully.");
@@ -554,25 +566,25 @@ public class server {
     public Double getGPA(int studentNum) {
         // Assuming letter grades: A=4.0, B=3.0, C=2.0, D=1.0, F=0.0
         String sql = "SELECT AVG(CASE " +
-                    "WHEN FinalGrade >= 90 THEN 4.0 " +
-                    "WHEN FinalGrade >= 80 THEN 3.0 " +
-                    "WHEN FinalGrade >= 70 THEN 2.0 " +
-                    "WHEN FinalGrade >= 60 THEN 1.0 " +
-                    "ELSE 0.0 END) AS GPA " +
-                    "FROM (" +
-                    "  SELECT c.ID, SUM(sg.Grade * gc.Weight / 100.0) AS FinalGrade " +
-                    "  FROM StudentGrade sg " +
-                    "  JOIN Assignment a ON sg.AssignmentID = a.ID " +
-                    "  JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
-                    "  JOIN Course c ON gc.CourseID = c.ID " +
-                    "  JOIN Enrollment e ON c.ID = e.CourseID " +
-                    "  WHERE e.StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
-                    "  GROUP BY c.ID" +
-                    ") AS CourseGrades";
-        
+                "WHEN FinalGrade >= 90 THEN 4.0 " +
+                "WHEN FinalGrade >= 80 THEN 3.0 " +
+                "WHEN FinalGrade >= 70 THEN 2.0 " +
+                "WHEN FinalGrade >= 60 THEN 1.0 " +
+                "ELSE 0.0 END) AS GPA " +
+                "FROM (" +
+                "  SELECT c.ID, SUM(sg.Grade * gc.Weight / 100.0) AS FinalGrade " +
+                "  FROM StudentGrade sg " +
+                "  JOIN Assignment a ON sg.AssignmentID = a.ID " +
+                "  JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                "  JOIN Course c ON gc.CourseID = c.ID " +
+                "  JOIN Enrollment e ON c.ID = e.CourseID " +
+                "  WHERE e.StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
+                "  GROUP BY c.ID" +
+                ") AS CourseGrades";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentNum);
-            
+
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 double gpa = rs.getDouble("GPA");
@@ -589,9 +601,10 @@ public class server {
     }
 
     public void searchStudent(String firstName, String lastName, Integer studentNum, String classStanding) {
-        StringBuilder sql = new StringBuilder("SELECT StudentNum, FirstName, LastName, Email FROM Student WHERE isActive = true");
+        StringBuilder sql = new StringBuilder(
+                "SELECT StudentNum, FirstName, LastName, Email FROM Student WHERE isActive = true");
         ArrayList<Object> params = new ArrayList<>();
-        
+
         if (firstName != null && !firstName.isEmpty()) {
             sql.append(" AND FirstName LIKE ?");
             params.add("%" + firstName + "%");
@@ -608,19 +621,19 @@ public class server {
             sql.append(" AND ClassStandingID = ?");
             params.add(classStanding);
         }
-        
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) {
                 pstmt.setObject(i + 1, params.get(i));
             }
-            
+
             ResultSet rs = pstmt.executeQuery();
             System.out.println("Search Results:");
             while (rs.next()) {
                 System.out.println(rs.getInt("StudentNum") + " - " +
-                                rs.getString("FirstName") + " " +
-                                rs.getString("LastName") + " (" +
-                                rs.getString("Email") + ")");
+                        rs.getString("FirstName") + " " +
+                        rs.getString("LastName") + " (" +
+                        rs.getString("Email") + ")");
             }
         } catch (SQLException e) {
             System.out.println("Error searching students: " + e.getMessage());
@@ -629,40 +642,41 @@ public class server {
 
     public void allTeacherCourses(int teacherNum) {
         String sql = "SELECT c.CourseNum, co.Name, c.Capacity, c.TimeSlotID " +
-                    "FROM Course c " +
-                    "JOIN CourseOffering co ON c.CourseOfferingID = co.ID " +
-                    "JOIN Teacher t ON c.TeacherID = t.ID " +
-                    "WHERE t.TeacherNum = ?";
-        
+                "FROM Course c " +
+                "JOIN CourseOffering co ON c.CourseOfferingID = co.ID " +
+                "JOIN Teacher t ON c.TeacherID = t.ID " +
+                "WHERE t.TeacherNum = ?";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, teacherNum);
-            
+
             ResultSet rs = pstmt.executeQuery();
             System.out.println("Courses for Teacher #" + teacherNum + ":");
             while (rs.next()) {
                 System.out.println("Course " + rs.getInt("CourseNum") + ": " +
-                                rs.getString("Name") + " | Capacity: " +
-                                rs.getInt("Capacity") + " | TimeSlot: " +
-                                rs.getString("TimeSlotID"));
+                        rs.getString("Name") + " | Capacity: " +
+                        rs.getInt("Capacity") + " | TimeSlot: " +
+                        rs.getString("TimeSlotID"));
             }
         } catch (SQLException e) {
             System.out.println("Error listing teacher courses: " + e.getMessage());
         }
     }
+
     public void listGradeDistribution(int courseNum) {
         String sql = "SELECT gc.Name, gc.Weight " +
-                    "FROM GradeCategory gc " +
-                    "JOIN Course c ON gc.CourseID = c.ID " +
-                    "WHERE c.CourseNum = ?";
-        
+                "FROM GradeCategory gc " +
+                "JOIN Course c ON gc.CourseID = c.ID " +
+                "WHERE c.CourseNum = ?";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, courseNum);
-            
+
             ResultSet rs = pstmt.executeQuery();
             System.out.println("Grade Distribution for Course #" + courseNum + ":");
             while (rs.next()) {
                 System.out.println(rs.getString("Name") + ": " +
-                                rs.getInt("Weight") + "%");
+                        rs.getInt("Weight") + "%");
             }
         } catch (SQLException e) {
             System.out.println("Error listing grade distribution: " + e.getMessage());
@@ -671,7 +685,7 @@ public class server {
 
     public void offeredCourses() {
         String sql = "SELECT Name FROM CourseOffering WHERE Offered = true";
-        
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             ResultSet rs = pstmt.executeQuery();
             System.out.println("Offered Courses:");
@@ -683,8 +697,8 @@ public class server {
         }
     }
 
-
-    public void updateTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email, String street, String zipcode, String stateId, boolean isActive) {
+    public void updateTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email,
+            String street, String zipcode, String stateId, boolean isActive) {
         String sql = "UPDATE Teacher SET FirstName=?, LastName=?, PhoneNum=?, Email=?, Street=?, Zipcode=?, StateID=?, Active=? WHERE TeacherNum=?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -693,7 +707,7 @@ public class server {
             pstmt.setString(3, phoneNum);
             pstmt.setString(4, email);
             pstmt.setString(5, street);
-            pstmt.setString(6, zipcode);       
+            pstmt.setString(6, zipcode);
             pstmt.setString(7, stateId);
             pstmt.setBoolean(8, isActive);
             pstmt.setInt(9, teacherNum);
@@ -743,40 +757,41 @@ public class server {
         }
     }
 
-
-    //Ask Alan for help with this one, need to check if course offering exists before creating course, also need to check if teacher exists and is active before creating course
-    public void createCourse(int courseNum, String courseName, int teacherNum, int capacity, String timeSlotID){
+    // Ask Alan for help with this one, need to check if course offering exists
+    // before creating course, also need to check if teacher exists and is active
+    // before creating course
+    public void createCourse(int courseNum, String courseName, int teacherNum, int capacity, String timeSlotID) {
         String findCourseOfferingNameSQL = "SELECT CourseOffering.name FROM CourseOffering" +
-                    "JOIN Course ON Course.CourseOfferingID = CourseOffering.ID";
-        
+                "JOIN Course ON Course.CourseOfferingID = CourseOffering.ID";
+
         String insertSQL = "INSERT INTO Course(CourseNum, CourseName, TeacherNum, Capacity, TimeSlotID) VALUES (?, ?, ?, ?, ?)";
 
-    try{
-        int categoryId = -1;
-        try(PreparedStatement idStmt = conn.prepareStatement(findCourseOfferingNameSQL)){
-            idStmt.setString(1, courseName);
-            idStmt.setInt(2, courseNum);
-            ResultSet rs = idStmt.executeQuery();
+        try {
+            int categoryId = -1;
+            try (PreparedStatement idStmt = conn.prepareStatement(findCourseOfferingNameSQL)) {
+                idStmt.setString(1, courseName);
+                idStmt.setInt(2, courseNum);
+                ResultSet rs = idStmt.executeQuery();
 
-            if(rs.next()){
-                categoryId = rs.getInt("ID");
-            } else {
-                System.out.println("Error: Course Offering or Course not found.");
-                return;
+                if (rs.next()) {
+                    categoryId = rs.getInt("ID");
+                } else {
+                    System.out.println("Error: Course Offering or Course not found.");
+                    return;
+                }
             }
-        }
-        try(PreparedStatement pstmt = conn.prepareStatement(insertSQL)){
-            pstmt.setInt(1, teacherNum);
-            pstmt.setInt(2, capacity);
-            pstmt.setString(3, timeSlotID);
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+                pstmt.setInt(1, teacherNum);
+                pstmt.setInt(2, capacity);
+                pstmt.setString(3, timeSlotID);
 
-            pstmt.executeUpdate();
-            System.out.println("Course created successfully!");
+                pstmt.executeUpdate();
+                System.out.println("Course created successfully!");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-    } catch(SQLException e){
-        e.printStackTrace();
-    }          
-}
+    }
 
     public void deleteCourse(int courseNum) {
         String sql = "DELETE FROM Course WHERE CourseNum = ?";

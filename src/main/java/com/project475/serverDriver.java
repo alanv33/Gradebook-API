@@ -6,8 +6,6 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Scanner;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 public class serverDriver {
 
 
