@@ -82,4 +82,35 @@ public class client {
         sc.nextLine();
         System.out.println(myDbServer.listCoursesForStudent_Server(studentNum));
     }
+
+    public void createTeacher_Client(Scanner sc){
+        System.out.println("Enter a new Teacher Number: ");
+        int teacherNum = sc.nextInt();
+        sc.nextLine();
+
+        System.out.println("Enter a First Name: ");
+        String firstName = sc.nextLine();
+
+        System.out.println("Enter a Last Name: ");
+        String lastName = sc.nextLine();
+
+        System.out.println("Enter a Phone Number: ");
+        String phoneNum = sc.nextLine();
+
+        System.out.println("Enter an Email: ");
+        String email = sc.nextLine();
+
+        System.out.println("Enter a Street: ");
+        String street = sc.nextLine();
+
+        System.out.println("Enter a Zipcode: ");
+        String zipcode = sc.nextLine();
+
+        System.out.println("Enter a State ID: ");
+        String stateId = sc.nextLine();
+
+        System.out.println(myDbServer.createTeacher_Server(teacherNum, firstName, lastName, phoneNum, email, street, zipcode, stateId));
+    }
+
+    
 }

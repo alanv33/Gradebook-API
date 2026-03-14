@@ -522,11 +522,11 @@ public class server {
         }
     }
 
-    public void createTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email,
-            String street, String zipcode, String stateId, boolean isActive) {
-        String sql = "INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, Active) "
+    public String createTeacher_Server(int teacherNum, String firstName, String lastName, String phoneNum, String email,
+            String street, String zipcode, String stateId) {
+        String sql = "INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, \"isActive\") "
                 +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, true)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, teacherNum);
@@ -537,12 +537,13 @@ public class server {
             pstmt.setString(6, street);
             pstmt.setString(7, zipcode);
             pstmt.setString(8, stateId);
-            pstmt.setBoolean(9, isActive);
 
             pstmt.executeUpdate();
             System.out.println("Teacher created successfully.");
+            return "Teacher created successfully.";
         } catch (SQLException e) {
             System.out.println("Error creating teacher: " + e.getMessage());
+            return "Error creating teacher: " + e.getMessage();
         }
     }
 
@@ -697,9 +698,10 @@ public class server {
         }
     }
 
-    public void updateTeacher(int teacherNum, String firstName, String lastName, String phoneNum, String email,
-            String street, String zipcode, String stateId, boolean isActive) {
-        String sql = "UPDATE Teacher SET FirstName=?, LastName=?, PhoneNum=?, Email=?, Street=?, Zipcode=?, StateID=?, Active=? WHERE TeacherNum=?";
+    //WORK ON THIS TOMORROW, need to only update one parameter
+    public String updateTeacher_Server(int teacherNum, String firstName, String lastName, String phoneNum, String email,
+            String street, String zipcode, String stateId) {
+        String sql = "UPDATE Teacher SET FirstName=?, LastName=?, PhoneNum=?, Email=?, Street=?, Zipcode=?, StateID=? WHERE TeacherNum=?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, firstName);
@@ -709,17 +711,19 @@ public class server {
             pstmt.setString(5, street);
             pstmt.setString(6, zipcode);
             pstmt.setString(7, stateId);
-            pstmt.setBoolean(8, isActive);
-            pstmt.setInt(9, teacherNum);
+            pstmt.setInt(8, teacherNum);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Teacher updated successfully.");
+                return "Teacher updated successfully.";
             } else {
                 System.out.println("No teacher found with TeacherNum: " + teacherNum);
+                return "No teacher found with TeacherNum: " + teacherNum;
             }
         } catch (SQLException e) {
             System.out.println("Error updating teacher: " + e.getMessage());
+            return "Error updating teacher: " + e.getMessage();
         }
     }
 

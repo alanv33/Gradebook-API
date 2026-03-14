@@ -24,6 +24,7 @@ public class serverDriver {
             System.out.println("3. Delete Assignments");
             System.out.println("4. List All Courses Assignments");
             System.out.println("5. List All Courses for a Student");
+            System.out.println("6. Create A Teacher");
             System.out.println("Insert a number to select one of the options above:");
 
             userInput = sc.nextInt();
@@ -47,6 +48,9 @@ public class serverDriver {
                     break;
                 case 5:
                     client.listCoursesForStudent_Client(sc);
+                    break;
+                case 6:
+                    client.createTeacher_Client(sc);
                     break;
                 default:
                     System.out.println("Invalid input");
