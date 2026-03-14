@@ -1,3 +1,7 @@
+/**
+ * This class is the server side for the gradebook API
+ * This class allows the client to connect to the database
+ */
 package com.project475;
 
 import java.sql.Connection;
@@ -8,35 +12,38 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import java.util.List;
-import java.util.Map;
 
 public class server {
     private Connection conn;
 
+    /**
+     * Driver code to connect to the database
+     * Every server object has its own connection. The connection object is contained in this class
+     * Only one server object should be made at a time to avoid multiple connections
+     */
     public server() {
-        /* -- DO NOT TOUCH -- */
+        // Loads the Database url from the .env file to avoid pushing the url to github
         Dotenv dotenv = Dotenv.load();
         String url = dotenv.get("DB_URL");
 
         // Attempt connection to DB
         try {
+            // Sets the connection
             this.conn = DriverManager.getConnection(url);
-
+        
+        // Catch exception
         } catch (Exception e) {
             System.err.println("Connection failed!");
             e.printStackTrace();
         }
     }
 
-    // Create a new student in the database. ID must be unique and is used to
-    // identify the student for updates and deletes.
-    // Remove all ID's, auto assigned by server
+    // Create a new student in the database. Using studentNum.
     public String createStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId) {
 
-        String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) "
+        String sql = "INSERT INTO \"Student\" (\"StudentNum\", \"FirstName\", \"LastName\", \"Email\", \"PhoneNum\", \"Street\", \"Zipcode\", \"StateID\", \"ClassStandingID\", \"isActive\") "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -51,126 +58,113 @@ public class server {
             pstmt.setString(9, classStandingId);
 
             pstmt.executeUpdate();
-            System.out.println("Student created successfully.");
             return "Student created successfully.";
         } catch (SQLException e) {
-            System.out.println("Error creating student: " + e.getMessage());
             return "Error creating student: " + e.getMessage();
         }
     }
 
-    // Update student information. ID is used to find the student and cannot be
-    // changed.
-    public void updateStudent(int studentNum, String firstName, String lastName,
+    // Update student information. Using studentNum
+  public String updateStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
-            String zipcode, String stateId, String classStandingId) {
+            String zipcode, String stateId, String classStandingId, Boolean isActive) {
 
-        String sql = "UPDATE Student SET FirstName=?, LastName=?, Email=?, PhoneNum=?, Street=?, Zipcode=?, StateID=?, ClassStandingID=? WHERE StudentNum=?";
+    // COALESCE logic to allow updating single/multiple field without re-entering data for other fields
+    String sql = "UPDATE \"Student\" SET " +
+             "\"FirstName\" = COALESCE(?, \"FirstName\"), " +
+             "\"LastName\" = COALESCE(?, \"LastName\"), " +
+             "\"Email\" = COALESCE(?, \"Email\"), " +
+             "\"PhoneNum\" = COALESCE(?, \"PhoneNum\"), " +
+             "\"Street\" = COALESCE(?, \"Street\"), " +
+             "\"Zipcode\" = COALESCE(?, \"Zipcode\"), " +
+             "\"StateID\" = COALESCE(?, \"StateID\"), " +
+             "\"ClassStandingID\" = COALESCE(?, \"ClassStandingID\"), " +
+             "\"isActive\" = COALESCE(?, \"isActive\") " + 
+             "WHERE \"StudentNum\" = ?";
+             
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, firstName);
+        pstmt.setString(2, lastName);
+        pstmt.setString(3, email);
+        pstmt.setString(4, phoneNum);
+        pstmt.setString(5, street);
+        pstmt.setString(6, zipcode);
+        pstmt.setString(7, stateId);
+        pstmt.setString(8, classStandingId);
+        pstmt.setObject(9, isActive);
+        pstmt.setInt(10, studentNum);
+
+        int rowsAffected = pstmt.executeUpdate();
+        if (rowsAffected > 0) {
+            return "Student updated successfully.";
+        } else {
+            return "No student found with student number: " + studentNum;
+        }
+    } catch (SQLException e) {
+        return "Error updating student: " + e.getMessage();
+    }
+}
+    // Enrolls a student in a course. Student and course must already exist.
+    public String enrollStudent(int studentNum, int courseNum) {
+            // Subquery to 
+            String sql = "INSERT INTO \"Enrollment\" (\"StudentID\", \"CourseID\") VALUES (" +
+                 "(SELECT \"ID\" FROM \"Student\" WHERE \"StudentNum\" = ?), " +
+                 "(SELECT \"ID\" FROM \"Course\" WHERE \"CourseNum\" = ?))";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, firstName);
-            pstmt.setString(2, lastName);
-            pstmt.setString(3, email);
-            pstmt.setString(4, phoneNum);
-            pstmt.setString(5, street);
-            pstmt.setString(6, zipcode);
-            pstmt.setString(7, stateId);
-            pstmt.setString(8, classStandingId);
-            pstmt.setInt(9, studentNum);
+
+            pstmt.setInt(1, studentNum);
+            pstmt.setInt(2, courseNum);
+
+            pstmt.executeUpdate();
+            return "Student enrolled successfully.";
+        } catch (SQLException e) {
+            if (e.getMessage().contains("null value in column")) {
+                return "Error: Student #" + studentNum + " or Course #" + courseNum + " does not exist.";
+            }
+        return "Error enrolling student: " + e.getMessage();
+    }
+}
+
+    public String dropStudent(int studentNum) {
+        String sql = "UPDATE \"Student\" SET \"isActive\" = false WHERE \"StudentNum\" = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentNum);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Student updated successfully.");
+                return "Student " + studentNum + " has been dropped (deactivated).";
             } else {
-                System.out.println("No student found with student number: " + studentNum);
+                return "Error: No student found with number: " + studentNum;
             }
         } catch (SQLException e) {
-            System.out.println("Error updating student: " + e.getMessage());
+            return "Error: Could not drop student. " + e.getMessage();
         }
     }
 
-    // Enrolls a student in a course. Student and course must already exist.
-    public String enrollStudent(int studentId, int courseId) {
-        String sql = "INSERT INTO Enrollment (StudentID, CourseID) VALUES (?, ?)";
+    /**
+        Adds an assignment to the database
 
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, studentId);
-            pstmt.setInt(2, courseId);
-
-            pstmt.executeUpdate();
-            System.out.println("Student enrolled successfully.");
-            return "Student enrolled successfully.";
-        } catch (SQLException e) {
-            System.out.println("Error enrolling student: " + e.getMessage());
-            return "Error enrolling student: " + e.getMessage();
-        }
-    }
-
-    // Takes a list of students to create or update. If a student with the given
-    // StudentNum already exists, that student's information will be updated.
-    // If not, a new student will be created.
-    public String crupdateStudents(List<Map<String, Object>> students) {
-        String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) "
-                +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                "ON CONFLICT (StudentNum) DO UPDATE SET " +
-                "FirstName = EXCLUDED.FirstName, " +
-                "LastName = EXCLUDED.LastName, " +
-                "Email = EXCLUDED.Email, " +
-                "PhoneNum = EXCLUDED.PhoneNum, " +
-                "isActive = EXCLUDED.isActive;";
-
-        try {
-
-            conn.setAutoCommit(false); // START TRANSACTION
-
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                for (Map<String, Object> s : students) {
-                    pstmt.setInt(1, (int) s.get("StudentNum"));
-                    pstmt.setString(2, (String) s.get("FirstName"));
-                    pstmt.setString(3, (String) s.get("LastName"));
-                    pstmt.setString(4, (String) s.get("Email"));
-                    pstmt.setString(5, (String) s.get("PhoneNum"));
-                    pstmt.setString(6, (String) s.get("Street"));
-                    pstmt.setString(7, (String) s.get("Zipcode"));
-                    pstmt.setString(8, (String) s.get("StateID"));
-                    pstmt.setString(9, (String) s.get("ClassStandingID"));
-                    pstmt.setBoolean(10, (boolean) s.getOrDefault("isActive", true));
-
-                    pstmt.addBatch(); // Add to the local batch
-                }
-                pstmt.executeBatch(); // Send the entire batch to the DB
-            }
-
-            conn.commit(); // FINISH TRANSACTION
-            return "SUCCESS: Processed " + students.size() + " students.";
-
-        } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-            return "FAILURE: Aborted and rolled back. Error: " + e.getMessage();
-        } finally {
-            try {
-                conn.setAutoCommit(true);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public String addAssignments_Server(String name, String gradeCatName, String dueDate, int courseNum) {
+        @param assignmentName The name of the assignment
+        @param gradeCatName The name of the grade category for the assignment
+        @param dueDate The due date of the assignment
+        @param courseNum The course number
+        @returns The status of the query (whether is failed or succeessfully added the assignment)
+     */
+    public String addAssignments_Server(String assignmentName, String gradeCatName, String dueDate, int courseNum) {
+        // Query to find the grade category ID
         String findIdSql = "SELECT gc.ID FROM GradeCategory gc " +
                 "JOIN Course c ON gc.CourseID = c.ID " +
                 "WHERE gc.Name = ? AND c.CourseNum = ?";
 
+        // Cast string to timestamp
         String insertSql = "INSERT INTO Assignment(Name, CategoryID, DueDate) VALUES(?,?,?::timestamp)";
 
         try {
+            // Sets category to -1 by default (invalid id)
             int categoryId = -1;
+            // Attempts to find the grade category ID based on the given values
             try (PreparedStatement idStmt = conn.prepareStatement(findIdSql)) {
                 idStmt.setString(1, gradeCatName);
                 idStmt.setInt(2, courseNum);
@@ -182,8 +176,9 @@ public class server {
                     return "Error: Grade Category or Course not found.";
                 }
             }
+            // If grade category found, add assignment
             try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
-                pstmt.setString(1, name);
+                pstmt.setString(1, assignmentName);
                 pstmt.setInt(2, categoryId);
                 pstmt.setString(3, dueDate);
 
@@ -196,21 +191,35 @@ public class server {
         }
     }
 
-    public String updateAssigment_Server(String name, int courseNum, String column, ArrayList<String> newVal) {
+    /**
+     * Updates an assignment
+     * 
+     * @param assignmentName Name of the assignment that is being updated
+     * @param courseNum course number the assignment is tied to
+     * @param column The column to be updated. This value is from a multiple choice select, not something the user types
+     **     1 is name
+     **     2 is grade category
+     **     3 is due date
+     * @param newVal The new value to be updated to
+     * @return A string on the query status (whether update was successful, failed or an error)
+     */
+    public String updateAssigment_Server(String assignmentName, int courseNum, String column, String newVal) {
         int gradeCatID = -1;
         String colName = "";
         Object valueToSet = null;
 
+        // If column updated is grade category
         if (column.equals("2")) {
             colName = "CategoryID";
-            String gradeCatName = newVal.get(0);
+            String gradeCatName = newVal;
 
+            // Attemps to find new grade category ID
             String findGCatID = "SELECT GradeCategory.ID FROM GradeCategory"
                     + " JOIN Course ON (Course.ID = GradeCategory.CourseID)"
                     + " WHERE Course.courseNum = ? AND GradeCategory.name = ?";
-
+            // 
             try (PreparedStatement pstmt = conn.prepareStatement(findGCatID)) {
-                pstmt.setInt(1, courseNum); // Use the new courseNum parameter
+                pstmt.setInt(1, courseNum); 
                 pstmt.setString(2, gradeCatName);
                 ResultSet rs = pstmt.executeQuery();
 
@@ -223,15 +232,16 @@ public class server {
             } catch (SQLException e) {
                 return e.getMessage();
             }
-
+            // Sets column name
         } else if (column.equals("1")) {
             colName = "Name";
-            valueToSet = newVal.get(0);
+            valueToSet = newVal;
 
         } else if (column.equals("3")) {
             colName = "DueDate";
+            // Ensures string is proper format for timestamp
             try {
-                valueToSet = java.sql.Timestamp.valueOf(newVal.get(0));
+                valueToSet = java.sql.Timestamp.valueOf(newVal);
             } catch (IllegalArgumentException e) {
                 return "Error: Date must be in format YYYY-MM-DD HH:MM:SS";
             }
@@ -239,6 +249,7 @@ public class server {
             return "Error: Invalid column selection.";
         }
 
+        // Updates the assignment
         String sql = "UPDATE Assignment SET " + colName + " = ? "
                 + "WHERE name ILIKE ? AND CategoryID IN ("
                 + "    SELECT GradeCategory.ID FROM GradeCategory "
@@ -248,8 +259,8 @@ public class server {
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setObject(1, valueToSet);
-            pstmt.setString(2, name);
-            pstmt.setInt(3, courseNum); // Plug in the courseNum to the subquery
+            pstmt.setString(2, assignmentName);
+            pstmt.setInt(3, courseNum);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
@@ -261,7 +272,13 @@ public class server {
 
         return "Assignment Update Failed (Assignment not found in that course)";
     }
-
+    /**
+     * Delete an assignment from the server
+     * 
+     * @param assignmentName name of assignment to delete
+     * @param courseNum course number of the assignment
+     * @return Status of query (whether it sucessfully deleted or failed)
+     */
     public String deleteAssignment_Server(String assignmentName, int courseNum) {
         String sql = "DELETE FROM Assignment WHERE name = ? AND categoryID IN" +
                 " (SELECT gradeCategory.ID FROM gradeCategory" +
@@ -279,6 +296,12 @@ public class server {
         }
     }
 
+    /**
+     * API to provide a list of assignments for a course
+     * 
+     * @param courseNum the course number that we want all assignments from
+     * @return A list of all the assignments in that course
+     */
     public String listAllCourseAssignments_Server(int courseNum) {
         String sql = "SELECT Assignment.name AS \"Assignment Name\", " +
                 " gradeCategory.name AS \"Grade Category\", " +
@@ -288,6 +311,8 @@ public class server {
                 " JOIN gradeCategory ON (gradeCategory.courseID = Course.ID) " +
                 " JOIN Assignment ON (Assignment.categoryID = gradeCategory.ID) " +
                 " WHERE Course.courseNum = ?";
+
+        // Output stirng
         StringBuilder output = new StringBuilder();
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -298,21 +323,29 @@ public class server {
             output.append("------------------------------------------\n");
 
             while (rs.next()) {
+                // Get items from result set
                 String name = rs.getString("Assignment Name");
                 String cat = rs.getString("Grade Category");
                 double weight = rs.getDouble("weight");
                 String date = rs.getString("dueDate");
 
+                // Append items to output
                 output.append(name).append(" | Category: ").append(cat).append(" | Weight: ").append(weight)
                         .append("% | Due: ").append(date).append("\n");
             }
-
+            // Turn string builder to string
             return output.toString();
         } catch (SQLException e) {
             return e.getMessage();
         }
     }
 
+    /**
+     * API to provide a list of all courses a student is enrolled in
+     * 
+     * @param studentNum Student number of the student that we want 
+     * @return A string of all the courses that student is enrolled in
+     */
     public String listCoursesForStudent_Server(int studentNum) {
         String sql = "SELECT CourseOffering.name AS \"Course Name\"," +
                 " Teacher.firstname AS \"First Name\"," +
@@ -327,8 +360,10 @@ public class server {
                 " WHERE student.studentNum = ?" +
                 " ORDER BY course.timeSlotID";
 
+        // Output string
         StringBuilder output = new StringBuilder();
-
+        
+        //Try the query
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentNum);
             ResultSet rs = pstmt.executeQuery();
@@ -337,16 +372,19 @@ public class server {
             output.append("------------------------------------------\n");
 
             while (rs.next()) {
+                // Get items from result set
                 String courseName = rs.getString("Course Name");
                 String Teacher = rs.getString("First Name") + " " + rs.getString("Last Name");
                 int capacity = rs.getInt("capacity");
                 String timeSlot = rs.getString("timeSlotID");
 
+                // Append items to output
                 output.append("Course: " + courseName + " | " + "Teacher: " + Teacher + " | " + "Capacity: "
                         + capacity + " | " + "Time Slot: " + timeSlot).append("\n");
 
             }
 
+            // String builder to string
             return output.toString();
         } catch (SQLException e) {
             return ("Query Error: " + e.getMessage());
@@ -908,4 +946,34 @@ public class server {
             System.out.println("Error listing assignments: " + e.getMessage());
         }
     }
+    public void updateAssignmentGradeForAll(String assignmentName, int courseNum, double grade) {
+    String sql = "UPDATE StudentGrade SET Grade = ? " +
+                 "WHERE AssignmentID = ( " +
+                    "SELECT a.ID FROM Assignment a " +
+                        "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                        "JOIN Course c ON gc.CourseID = c.ID " +
+                    "WHERE a.Name = ? AND c.CourseNum = ? " +") " +
+                 "AND StudentID IN ( " +
+                    "SELECT s.ID FROM Student s " +
+                        "JOIN Enrollment e ON s.ID = e.StudentID " +
+                        "JOIN Course c ON e.CourseID = c.ID " +
+                    "WHERE c.CourseNum = ? " +
+                 ")";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setDouble(1, grade);
+        pstmt.setString(2, assignmentName);
+        pstmt.setInt(3, courseNum);
+        pstmt.setInt(4, courseNum);
+
+        int rowsAffected = pstmt.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Updated grade for " + rowsAffected + " students.");
+        } else {
+            System.out.println("No matching records found.");
+        }
+    } catch (SQLException e) {
+        System.out.println("Error updating grades: " + e.getMessage());
+    }
+}
 }

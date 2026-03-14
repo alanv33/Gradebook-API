@@ -1,3 +1,8 @@
+/**
+ * This class is the driver file that allows the user to pick options
+ * Users can pick one of many numbers that corresponds to a client function
+ ** Further input is handled by the client class 
+ */
 package com.project475;
 
 import java.nio.file.Files;
@@ -16,6 +21,7 @@ public class serverDriver {
         
         System.out.println("Hi! Welcome to the gradebook system");
 
+        // Loops until the user wants to exit the system
         while (userInput != 0) {
             System.out.println("\nWhat would you like to do?");
             System.out.println("0. Exit");
@@ -60,6 +66,7 @@ public class serverDriver {
         sc.close(); 
     }
 
+    // Method used to intialize the database from the schema.sql file
     public static void initializeDatabase(Connection conn) {
         try {
             String sql = new String(Files.readAllBytes(Paths.get("schema.sql")));
