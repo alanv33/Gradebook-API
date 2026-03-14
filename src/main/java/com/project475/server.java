@@ -10,8 +10,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -40,14 +38,12 @@ public class server {
         }
     }
 
-    // Create a new student in the database. ID must be unique and is used to
-    // identify the student for updates and deletes.
-    // Remove all ID's, auto assigned by server
+    // Create a new student in the database. Using studentNum.
     public String createStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId) {
 
-        String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) "
+        String sql = "INSERT INTO \"Student\" (\"StudentNum\", \"FirstName\", \"LastName\", \"Email\", \"PhoneNum\", \"Street\", \"Zipcode\", \"StateID\", \"ClassStandingID\", \"isActive\") "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -70,39 +66,52 @@ public class server {
         }
     }
 
-    // Update student information. ID is used to find the student and cannot be
-    // changed.
-    public void updateStudent(int studentNum, String firstName, String lastName,
+    // Update student information. Using studentNum
+  public void updateStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
-            String zipcode, String stateId, String classStandingId) {
+            String zipcode, String stateId, String classStandingId, Boolean isActive) {
 
-        String sql = "UPDATE Student SET FirstName=?, LastName=?, Email=?, PhoneNum=?, Street=?, Zipcode=?, StateID=?, ClassStandingID=? WHERE StudentNum=?";
+    // COALESCE logic to allow updating single/multiple field without re-entering data for other fields
+    String sql = "UPDATE \"Student\" SET " +
+             "\"FirstName\" = COALESCE(?, \"FirstName\"), " +
+             "\"LastName\" = COALESCE(?, \"LastName\"), " +
+             "\"Email\" = COALESCE(?, \"Email\"), " +
+             "\"PhoneNum\" = COALESCE(?, \"PhoneNum\"), " +
+             "\"Street\" = COALESCE(?, \"Street\"), " +
+             "\"Zipcode\" = COALESCE(?, \"Zipcode\"), " +
+             "\"StateID\" = COALESCE(?, \"StateID\"), " +
+             "\"ClassStandingID\" = COALESCE(?, \"ClassStandingID\"), " +
+             "\"isActive\" = COALESCE(?, \"isActive\") " + 
+             "WHERE \"StudentNum\" = ?";
+             
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, firstName);
+        pstmt.setString(2, lastName);
+        pstmt.setString(3, email);
+        pstmt.setString(4, phoneNum);
+        pstmt.setString(5, street);
+        pstmt.setString(6, zipcode);
+        pstmt.setString(7, stateId);
+        pstmt.setString(8, classStandingId);
+        pstmt.setObject(9, isActive);
+        pstmt.setInt(10, studentNum);
 
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, firstName);
-            pstmt.setString(2, lastName);
-            pstmt.setString(3, email);
-            pstmt.setString(4, phoneNum);
-            pstmt.setString(5, street);
-            pstmt.setString(6, zipcode);
-            pstmt.setString(7, stateId);
-            pstmt.setString(8, classStandingId);
-            pstmt.setInt(9, studentNum);
-
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Student updated successfully.");
-            } else {
-                System.out.println("No student found with student number: " + studentNum);
-            }
-        } catch (SQLException e) {
-            System.out.println("Error updating student: " + e.getMessage());
+        int rowsAffected = pstmt.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Student " + studentNum + " updated successfully.");
+        } else {
+            System.out.println("No student found with student number: " + studentNum);
         }
+    } catch (SQLException e) {
+        System.out.println("Error updating student: " + e.getMessage());
     }
-
+}
     // Enrolls a student in a course. Student and course must already exist.
     public String enrollStudent(int studentId, int courseId) {
-        String sql = "INSERT INTO Enrollment (StudentID, CourseID) VALUES (?, ?)";
+            // Subquery to 
+            String sql = "INSERT INTO \"Enrollment\" (\"StudentID\", \"CourseID\") VALUES (" +
+                 "(SELECT \"ID\" FROM \"Student\" WHERE \"StudentNum\" = ?), " +
+                 "(SELECT \"ID\" FROM \"Course\" WHERE \"CourseNum\" = ?))";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -118,61 +127,23 @@ public class server {
         }
     }
 
-    // Takes a list of students to create or update. If a student with the given
-    // StudentNum already exists, that student's information will be updated.
-    // If not, a new student will be created.
-    public String crupdateStudents(List<Map<String, Object>> students) {
-        String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) "
-                +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                "ON CONFLICT (StudentNum) DO UPDATE SET " +
-                "FirstName = EXCLUDED.FirstName, " +
-                "LastName = EXCLUDED.LastName, " +
-                "Email = EXCLUDED.Email, " +
-                "PhoneNum = EXCLUDED.PhoneNum, " +
-                "isActive = EXCLUDED.isActive;";
 
-        try {
+    public String dropStudent(int studentNum) {
+        String sql = "UPDATE \"Student\" SET \"isActive\" = false WHERE \"StudentNum\" = ?";
 
-            conn.setAutoCommit(false); // START TRANSACTION
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentNum);
 
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                for (Map<String, Object> s : students) {
-                    pstmt.setInt(1, (int) s.get("StudentNum"));
-                    pstmt.setString(2, (String) s.get("FirstName"));
-                    pstmt.setString(3, (String) s.get("LastName"));
-                    pstmt.setString(4, (String) s.get("Email"));
-                    pstmt.setString(5, (String) s.get("PhoneNum"));
-                    pstmt.setString(6, (String) s.get("Street"));
-                    pstmt.setString(7, (String) s.get("Zipcode"));
-                    pstmt.setString(8, (String) s.get("StateID"));
-                    pstmt.setString(9, (String) s.get("ClassStandingID"));
-                    pstmt.setBoolean(10, (boolean) s.getOrDefault("isActive", true));
-
-                    pstmt.addBatch(); // Add to the local batch
-                }
-                pstmt.executeBatch(); // Send the entire batch to the DB
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                return "Student " + studentNum + " has been dropped (deactivated).";
+            } else {
+                return "Error: No student found with number: " + studentNum;
             }
-
-            conn.commit(); // FINISH TRANSACTION
-            return "SUCCESS: Processed " + students.size() + " students.";
-
         } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-            return "FAILURE: Aborted and rolled back. Error: " + e.getMessage();
-        } finally {
-            try {
-                conn.setAutoCommit(true);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            return "Error: Could not drop student. " + e.getMessage();
         }
     }
-
     /**
         Adds an assignment to the database
 
