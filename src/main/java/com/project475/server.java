@@ -58,16 +58,14 @@ public class server {
             pstmt.setString(9, classStandingId);
 
             pstmt.executeUpdate();
-            System.out.println("Student created successfully.");
             return "Student created successfully.";
         } catch (SQLException e) {
-            System.out.println("Error creating student: " + e.getMessage());
             return "Error creating student: " + e.getMessage();
         }
     }
 
     // Update student information. Using studentNum
-  public void updateStudent(int studentNum, String firstName, String lastName,
+  public String updateStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId, Boolean isActive) {
 
@@ -98,16 +96,16 @@ public class server {
 
         int rowsAffected = pstmt.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Student " + studentNum + " updated successfully.");
+            return "Student updated successfully.";
         } else {
-            System.out.println("No student found with student number: " + studentNum);
+            return "No student found with student number: " + studentNum;
         }
     } catch (SQLException e) {
-        System.out.println("Error updating student: " + e.getMessage());
+        return "Error updating student: " + e.getMessage();
     }
 }
     // Enrolls a student in a course. Student and course must already exist.
-    public String enrollStudent(int studentId, int courseId) {
+    public String enrollStudent(int studentNum, int courseNum) {
             // Subquery to 
             String sql = "INSERT INTO \"Enrollment\" (\"StudentID\", \"CourseID\") VALUES (" +
                  "(SELECT \"ID\" FROM \"Student\" WHERE \"StudentNum\" = ?), " +
@@ -115,18 +113,18 @@ public class server {
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, studentId);
-            pstmt.setInt(2, courseId);
+            pstmt.setInt(1, studentNum);
+            pstmt.setInt(2, courseNum);
 
             pstmt.executeUpdate();
-            System.out.println("Student enrolled successfully.");
             return "Student enrolled successfully.";
         } catch (SQLException e) {
-            System.out.println("Error enrolling student: " + e.getMessage());
-            return "Error enrolling student: " + e.getMessage();
-        }
+            if (e.getMessage().contains("null value in column")) {
+                return "Error: Student #" + studentNum + " or Course #" + courseNum + " does not exist.";
+            }
+        return "Error enrolling student: " + e.getMessage();
     }
-
+}
 
     public String dropStudent(int studentNum) {
         String sql = "UPDATE \"Student\" SET \"isActive\" = false WHERE \"StudentNum\" = ?";
@@ -144,6 +142,7 @@ public class server {
             return "Error: Could not drop student. " + e.getMessage();
         }
     }
+
     /**
         Adds an assignment to the database
 
