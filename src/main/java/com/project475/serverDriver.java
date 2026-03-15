@@ -31,6 +31,10 @@ public class serverDriver {
             System.out.println("4. List All Courses Assignments");
             System.out.println("5. List All Courses for a Student");
             System.out.println("6. Create A Teacher");
+            System.out.println("7. Create Grade Category");
+            System.out.println("8. Update Grade Category");
+            System.out.println("9. Delete Grade Category");
+            System.out.println("10. Update an Assignment Grade for all");
             System.out.println("11. Create Grade Category");
             System.out.println("12. Update Grade Category");
             System.out.println("13. Delete Grade Category");
