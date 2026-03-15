@@ -133,5 +133,47 @@ public class client {
         System.out.println(myDbServer.createTeacher_Server(teacherNum, firstName, lastName, phoneNum, email, street, zipcode, stateId));
     }
 
-    
+    public void createGradeCategory(Scanner sc){
+        System.out.println("What is the course number?");
+        int courseNum = sc.nextInt();
+        System.out.println("What is the name of the grade category?");
+        String categoryName = sc.nextLine();
+        System.out.println("What is the grade weight?");
+        double gradeWeight = sc.nextDouble();
+        System.out.println(myDbServer.createGradeCategory(courseNum, categoryName, gradeWeight));
+
+    }
+
+    public void updateGradeCategory(Scanner sc){
+        System.out.println("What is the course number?");
+        int courseNum = sc.nextInt();
+        System.out.println("What is the name of the grade category?");
+        String categoryName = sc.nextLine();
+        System.out.println("What is the new grade weight?");
+        double newWeight = sc.nextDouble();
+        System.out.println(myDbServer.updateGradeCategory(courseNum, categoryName, newWeight));
+
+    }
+
+    public void deleteGradeCategory(Scanner sc){
+        System.out.println("What is the course number?");
+        int courseNum = sc.nextInt();
+        System.out.println("What is the name of the grade category?");
+        String categoryName = sc.nextLine();
+        System.out.println(myDbServer.deleteGradeCategory(courseNum, categoryName));
+
+    }
+
+
+    public void updateAssignmentGradeForAll(Scanner sc){
+        System.out.println("What is the assignment name?");
+        String assignmentName = sc.nextLine();
+        System.out.println("What is the course number?");
+        int courseNum = sc.nextInt();
+        System.out.println("What is the grade?");
+        double grade = sc.nextDouble();
+        System.out.println(myDbServer.updateAssignmentGradeForAll(assignmentName, courseNum, grade));
+
+
+    }
 }
