@@ -413,24 +413,29 @@ public class server {
 
     public void createGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
         String sql = "INSERT INTO GradeCategory (Name, Weight, CourseID) " +
-                "VALUES (?, ?, (SELECT ID FROM Course WHERE CourseNum = ?))";
+                    "VALUES (?, ?, (SELECT ID FROM Course WHERE CourseNum = ?))";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, gradeCategoryName);
             pstmt.setInt(2, gradeWeight);
             pstmt.setInt(3, courseNumber);
-            pstmt.executeUpdate();
-            System.out.println("Grade Category created successfully.");
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Grade Category created successfully.");
+            } else {
+                System.out.println("Grade Category was not created.");
+            }
         } catch (SQLException e) {
             System.out.println("Error creating Grade Category: " + e.getMessage());
         }
     }
 
-    public void updateGradeCategory(int courseNumber, String gradeCategoryName, int newWeight) {
-        String sql = "UPDATE GradeCategory SET Weight=? WHERE Name=? AND CourseID=(SELECT ID FROM Course WHERE CourseNum=?)";
+    public void updateGradeCategory(int courseNumber, String gradeCategoryName, double newWeight) {
+        String sql = "UPDATE GradeCategory SET Weight = ? WHERE Name = ? AND CourseID = (SELECT ID FROM Course WHERE CourseNum = ?)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, newWeight);
+            pstmt.setDouble(1, newWeight);
             pstmt.setString(2, gradeCategoryName);
             pstmt.setInt(3, courseNumber);
 
@@ -441,26 +446,28 @@ public class server {
                 System.out.println("No category found.");
             }
         } catch (SQLException e) {
-            System.out.println("Error updating grade: " + e.getMessage());
+            System.out.println("Error updating grade category: " + e.getMessage());
         }
     }
 
-    public void deleteGradeCategory(int courseNumber, String gradeCategoryName) {
-        String sql = "DELETE FROM GradeCategory WHERE CourseID = (SELECT ID FROM Course WHERE CourseNum = ?) AND Name = ?";
-
+    
+    public String deleteGradeCategory(int courseNumber, String gradeCategoryName) {
+        String sql = "DELETE gc " +
+        "FROM GradeCategory gc " +
+        "JOIN Course c ON gc.CourseID = c.ID " +
+        "WHERE c.CourseNum = ? AND gc.Name = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, courseNumber);
             pstmt.setString(2, gradeCategoryName);
 
             int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Grade Category deleted successfully.");
-            } else {
-                System.out.println("No category found.");
-            }
-        } catch (SQLException e) {
-            System.out.println("Error deleting grade category: " + e.getMessage());
+        if (rowsAffected > 0) {
+            return "Grade Category deleted successfully.";
+        } else {
+            return "No category found.";
         }
+        } catch (SQLException e) {
+            return "Error deleting grade category: " + e.getMessage();        }
     }
 
     public String dropStudent(int studentNum, int courseNum) {
@@ -1027,33 +1034,34 @@ public class server {
         }
     }
     public void updateAssignmentGradeForAll(String assignmentName, int courseNum, double grade) {
-    String sql = "UPDATE StudentGrade SET Grade = ? " +
-                 "WHERE AssignmentID = ( " +
-                    "SELECT a.ID FROM Assignment a " +
-                        "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
-                        "JOIN Course c ON gc.CourseID = c.ID " +
-                    "WHERE a.Name = ? AND c.CourseNum = ? " +") " +
-                 "AND StudentID IN ( " +
-                    "SELECT s.ID FROM Student s " +
-                        "JOIN Enrollment e ON s.ID = e.StudentID " +
-                        "JOIN Course c ON e.CourseID = c.ID " +
-                    "WHERE c.CourseNum = ? " +
-                 ")";
+        String sql = "UPDATE StudentGrade SET Grade = ? " +
+                    "WHERE AssignmentID IN ( " +
+                        "SELECT a.ID FROM Assignment a " +
+                            "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                            "JOIN Course c ON gc.CourseID = c.ID " +
+                        "WHERE a.Name = ? AND c.CourseNum = ? " +
+                    ") " +
+                    "AND StudentID IN ( " +
+                        "SELECT s.ID FROM Student s " +
+                            "JOIN Enrollment e ON s.ID = e.StudentID " +
+                            "JOIN Course c ON e.CourseID = c.ID " +
+                        "WHERE c.CourseNum = ? " +
+                    ")";
 
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setDouble(1, grade);
-        pstmt.setString(2, assignmentName);
-        pstmt.setInt(3, courseNum);
-        pstmt.setInt(4, courseNum);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDouble(1, grade);
+            pstmt.setString(2, assignmentName);
+            pstmt.setInt(3, courseNum);
+            pstmt.setInt(4, courseNum);
 
-        int rowsAffected = pstmt.executeUpdate();
-        if (rowsAffected > 0) {
-            System.out.println("Updated grade for " + rowsAffected + " students.");
-        } else {
-            System.out.println("No matching records found.");
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Updated grade for " + rowsAffected + " students.");
+            } else {
+                System.out.println("No matching records found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating grades: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        System.out.println("Error updating grades: " + e.getMessage());
     }
-}
 }
