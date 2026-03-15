@@ -58,6 +58,18 @@ public class serverDriver {
                 case 6:
                     client.createTeacher_Client(sc);
                     break;
+                case 7:
+                    client.updateTeacher_Client(sc);
+                    break;
+                case 8:
+                    client.deleteTeacher_Client(sc);
+                    break;
+                case 9:
+                    client.createCourse_Client(sc);
+                    break;
+                case 10:
+                    client.deleteCourse_Client(sc);
+                    break;
                 default:
                     System.out.println("Invalid input");
             }
