@@ -303,4 +303,96 @@ public class client {
 
         myDbServer.updateAssignmentGradeForAll(assignmentName, courseNum, grade);
     }
+
+    // studentNum helper
+    public int getValidInt(Scanner sc, String prompt) {
+        while (true) {
+             System.out.println(prompt);
+             String input = sc.nextLine().trim();
+             try {
+                return Integer.parseInt(input);
+                }
+             catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                }
+        }
+    }
+         // Creates a student
+    public void createStudent_Client(Scanner sc) {
+        System.out.println("Creating New Student");
+        int studentNum = getValidInt(sc, "What is your Student Number?: ");
+        System.out.println("What is your First Name?: ");
+        String firstName = sc.nextLine();
+        System.out.println("What is your Last Name?: ");
+        String lastName = sc.nextLine();
+        System.out.println("What is your Email?: ");
+        String email = sc.nextLine();
+        System.out.println("What is your Phone Number?: ");
+        String phoneNum = sc.nextLine();
+        System.out.println("What is your Street?: ");
+        String street = sc.nextLine();
+        System.out.println("What is your Zipcode?: ");
+        String zipcode = sc.nextLine();
+        System.out.println("What is your State ID?: ");
+        String stateId = sc.nextLine();
+        System.out.println("What is your Class Standing ID?: ");
+        String classStandingId = sc.nextLine();
+        
+        String result = myDbServer.createStudent(studentNum, firstName, lastName, email, phoneNum, street, zipcode, stateId, classStandingId);
+        System.out.println("\n" + result);
+    }
+    // Helper to simplify blank inputs for updateStudent_Client
+    public String updateStudentHelper (Scanner sc) {
+        String input = sc.nextLine().trim();
+        return input.isEmpty() ? null : input;
+    }
+        
+    public void updateStudent_Client(Scanner sc) {
+        System.out.println("Updating Student (Leave blank to skip)");
+        int studentNum = getValidInt(sc, "Enter the Student Number to modify: ");
+        System.out.println("Modifying First Name: ");
+        String firstName = updateStudentHelper(sc);
+        System.out.println("Modifying Last Name: ");
+        String lastName = updateStudentHelper(sc);
+        System.out.println("Modifying Email: ");
+        String email = updateStudentHelper(sc);
+        System.out.println("Modifying Phone Number: ");
+        String phoneNum = updateStudentHelper(sc);
+        System.out.println("Modifying Street: ");
+        String street = updateStudentHelper(sc);
+        System.out.println("Modifying Zipcode: ");
+        String zipcode = updateStudentHelper(sc);
+        System.out.println("Modifying State ID: ");
+        String stateId = updateStudentHelper(sc);
+        System.out.println("Modifying Class Standing ID: ");
+        String classStandingId = updateStudentHelper(sc);
+        System.out.println("Activate Student? (y/n/blank): ");
+        String choice = sc.nextLine().toLowerCase();
+        Boolean isActive = null;
+        if (choice.equals("y")) isActive = true;
+        if (choice.equals("n")) isActive = false;
+        
+        String result = myDbServer.updateStudent(studentNum, firstName, lastName, email, phoneNum, street, zipcode, stateId, classStandingId, isActive);
+        System.out.println("\n" + result);
+    }
+    
+    // Enrolls a student in a course
+    public void enrollStudent_Client(Scanner sc) {
+        System.out.println("Enrolling Student");
+        int studentNum = getValidInt(sc, "Enter the Student Number?: ");
+        int courseNum = getValidInt(sc, "Enter the Course Number?: ");
+        
+        String result = myDbServer.enrollStudent(studentNum, courseNum);
+        System.out.println("\n" + result);
+    }
+
+    // Drops (deactivates) a student
+    public void dropStudent_Client(Scanner sc) {
+        System.out.println("Dropping Student");
+        int studentNum = getValidInt(sc, "Enter the Student Number to drop: ");
+        
+        String result = myDbServer.dropStudent(studentNum);
+        System.out.println("\n" + result);
+    }
+
 }
