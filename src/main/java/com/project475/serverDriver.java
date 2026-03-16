@@ -39,6 +39,10 @@ public class serverDriver {
             System.out.println("12. Update Grade Category");
             System.out.println("13. Delete Grade Category");
             System.out.println("14. Update an Assignment Grade for all");
+            System.out.println("15. Create a Student");
+            System.out.println("16. Update a Student");
+            System.out.println("17. Enroll a Student in a Course");
+            System.out.println("18. Drop a Student (deactivate)");
             System.out.println("Insert a number to select one of the options above:");
 
             userInput = sc.nextInt();
@@ -89,6 +93,18 @@ public class serverDriver {
                     break;
                 case 14:
                     client.updateAssignmentGradeForAll(sc);
+                    break;
+                case 15:
+                    client.createStudent_Client(sc);
+                    break;
+                case 16:
+                    client.updateStudent_Client(sc);
+                    break;
+                case 17:
+                    client.enrollStudent_Client(sc);
+                    break;
+                case 18:
+                    client.dropStudent_Client(sc);
                     break;
                 default:
                     System.out.println("Invalid input");

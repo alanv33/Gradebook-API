@@ -391,25 +391,6 @@ public class server {
         }
     }
 
-    // Used to reactivate a student that was dropped. Sets the student's isActive
-    // status to true.
-    public void activateStudent(int studentNum) {
-        String sql = "UPDATE Student SET Active=true WHERE StudentNum=?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, studentNum);
-
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Student set to active.");
-            } else {
-                System.out.println("No student found with StudentNum: " + studentNum);
-            }
-        } catch (SQLException e) {
-            System.out.println("Error updating student: " + e.getMessage());
-        }
-    }
 
     public void createGradeCategory(int courseNumber, String gradeCategoryName, int gradeWeight) {
         String sql = "INSERT INTO GradeCategory (Name, Weight, CourseID) " +
@@ -468,28 +449,6 @@ public class server {
         }
         } catch (SQLException e) {
             return "Error deleting grade category: " + e.getMessage();        }
-    }
-
-    public String dropStudent(int studentNum, int courseNum) {
-        String sql = "DELETE FROM Enrollment WHERE StudentID = (SELECT ID FROM Student WHERE StudentNum = ?) " +
-                "AND CourseID = (SELECT ID FROM Course WHERE CourseNum = ?)";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, studentNum);
-            pstmt.setInt(2, courseNum);
-
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Student dropped from course successfully.");
-                return "Student dropped from course successfully.";
-            } else {
-                System.out.println("Enrollment not found.");
-                return "Enrollment not found.";
-            }
-        } catch (SQLException e) {
-            System.out.println("Error dropping student: " + e.getMessage());
-            return "Error dropping student: " + e.getMessage();
-        }
     }
 
     public void updateAssignmentGrade(String assignmentName, int studentNum, int courseNum, double grade) {
