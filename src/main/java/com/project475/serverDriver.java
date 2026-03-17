@@ -43,6 +43,18 @@ public class serverDriver {
             System.out.println("16. Update a Student");
             System.out.println("17. Enroll a Student in a Course");
             System.out.println("18. Drop a Student (deactivate)");
+            System.out.println("19. List Students in Course");
+            System.out.println("20. Get Student GPA");
+            System.out.println("21. Search Students");
+            System.out.println("22. List Teacher's Courses");
+            System.out.println("23. List Grade Distribution");
+            System.out.println("24. List Offered Courses");
+            System.out.println("25. Calculate Course Grade");
+            System.out.println("26. Update Single Assignment Grade");
+            System.out.println("27. Create Course Offering");
+            System.out.println("28. Update Course Offering");
+            System.out.println("29. Delete Course Offering");
+            System.out.println("30. List Student's Assignments in Course");
             System.out.println("Insert a number to select one of the options above:");
 
             userInput = sc.nextInt();
@@ -105,6 +117,42 @@ public class serverDriver {
                     break;
                 case 18:
                     client.dropStudent_Client(sc);
+                    break;
+                case 19:
+                    client.listStudentsInCourse_Client(sc);
+                    break;
+                case 20:
+                    client.getGPA_Client(sc);
+                    break;
+                case 21:
+                    client.searchStudent_Client(sc);
+                    break;
+                case 22:
+                    client.allTeacherCourses_Client(sc);
+                    break;
+                case 23:
+                    client.listGradeDistribution_Client(sc);
+                    break;
+                case 24:
+                    client.offeredCourses_Client(sc);
+                    break;
+                case 25:
+                    client.calculateCourseGrade_Client(sc);
+                    break;
+                case 26:
+                    client.updateAssignmentGrade_Client(sc);
+                    break;
+                case 27:
+                    client.createCourseOffering_Client(sc);
+                    break;
+                case 28:
+                    client.updateCourseOffering_Client(sc);
+                    break;
+                case 29:
+                    client.deleteCourseOffering_Client(sc);
+                    break;
+                case 30:
+                    client.listAssignmentsForStudent_Client(sc);
                     break;
                 default:
                     System.out.println("Invalid input");
