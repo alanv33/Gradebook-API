@@ -432,10 +432,8 @@ public class server {
 
     
     public String deleteGradeCategory(int courseNumber, String gradeCategoryName) {
-        String sql = "DELETE gc " +
-        "FROM GradeCategory gc " +
-        "JOIN Course c ON gc.CourseID = c.ID " +
-        "WHERE c.CourseNum = ? AND gc.Name = ?";
+        String sql = "DELETE FROM GradeCategory " +
+                 "WHERE Name = ? AND CourseID = (SELECT ID FROM Course WHERE CourseNum = ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, courseNumber);
             pstmt.setString(2, gradeCategoryName);
