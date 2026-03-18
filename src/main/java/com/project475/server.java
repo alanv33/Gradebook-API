@@ -432,11 +432,12 @@ public class server {
 
     
     public String deleteGradeCategory(int courseNumber, String gradeCategoryName) {
-            String sql = "DELETE FROM GradeCategory " +  "WHERE Name = ? AND CourseID = (SELECT ID FROM Course WHERE CourseNum = CAST(? AS VARCHAR))";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, courseNumber);
-            pstmt.setString(2, String.valueOf(courseNumber));
+        String sql = "DELETE FROM GradeCategory " +
+                    "WHERE Name = ? AND CourseID = (SELECT ID FROM Course WHERE CourseNum = CAST(? AS VARCHAR))";
 
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, gradeCategoryName);              // ? 1 = Name
+            pstmt.setString(2, String.valueOf(courseNumber));   // ? 2 = CourseNum
             int rowsAffected = pstmt.executeUpdate();
         if (rowsAffected > 0) {
             return "Grade Category deleted successfully.";
