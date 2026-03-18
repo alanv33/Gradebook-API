@@ -44,12 +44,11 @@ public class server {
         }
     }
 
-    // Create a new student in the database. Using studentNum.
     public String createStudent(int studentNum, String firstName, String lastName,
-            String email, String phoneNum, String street,
-            String zipcode, String stateId, String classStandingId) {
+        String email, String phoneNum, String street,
+        String zipcode, String stateId, String classStandingId) {
 
-        String sql = "INSERT INTO \"Student\" (\"StudentNum\", \"FirstName\", \"LastName\", \"Email\", \"PhoneNum\", \"Street\", \"Zipcode\", \"StateID\", \"ClassStandingID\", \"isActive\") "
+        String sql = "INSERT INTO Student (StudentNum, FirstName, LastName, Email, PhoneNum, Street, Zipcode, StateID, ClassStandingID, isActive) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -70,55 +69,50 @@ public class server {
         }
     }
 
-    // Update student information. Using studentNum
-  public String updateStudent(int studentNum, String firstName, String lastName,
+   public String updateStudent(int studentNum, String firstName, String lastName,
             String email, String phoneNum, String street,
             String zipcode, String stateId, String classStandingId, Boolean isActive) {
 
-    // COALESCE logic to allow updating single/multiple field without re-entering data for other fields
-    String sql = "UPDATE \"Student\" SET " +
-             "\"FirstName\" = COALESCE(?, \"FirstName\"), " +
-             "\"LastName\" = COALESCE(?, \"LastName\"), " +
-             "\"Email\" = COALESCE(?, \"Email\"), " +
-             "\"PhoneNum\" = COALESCE(?, \"PhoneNum\"), " +
-             "\"Street\" = COALESCE(?, \"Street\"), " +
-             "\"Zipcode\" = COALESCE(?, \"Zipcode\"), " +
-             "\"StateID\" = COALESCE(?, \"StateID\"), " +
-             "\"ClassStandingID\" = COALESCE(?, \"ClassStandingID\"), " +
-             "\"isActive\" = COALESCE(?, \"isActive\") " + 
-             "WHERE \"StudentNum\" = ?";
-             
-    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setString(1, firstName);
-        pstmt.setString(2, lastName);
-        pstmt.setString(3, email);
-        pstmt.setString(4, phoneNum);
-        pstmt.setString(5, street);
-        pstmt.setString(6, zipcode);
-        pstmt.setString(7, stateId);
-        pstmt.setString(8, classStandingId);
-        pstmt.setObject(9, isActive);
-        pstmt.setInt(10, studentNum);
-
-        int rowsAffected = pstmt.executeUpdate();
-        if (rowsAffected > 0) {
-            return "Student updated successfully.";
-        } else {
-            return "No student found with student number: " + studentNum;
-        }
-    } catch (SQLException e) {
-        return "Error updating student: " + e.getMessage();
-    }
-}
-    // Enrolls a student in a course. Student and course must already exist.
-    public String enrollStudent(int studentNum, int courseNum) {
-            // Subquery to 
-            String sql = "INSERT INTO \"Enrollment\" (\"StudentID\", \"CourseID\") VALUES (" +
-                 "(SELECT \"ID\" FROM \"Student\" WHERE \"StudentNum\" = ?), " +
-                 "(SELECT \"ID\" FROM \"Course\" WHERE \"CourseNum\" = ?))";
+        String sql = "UPDATE Student SET " +
+                "FirstName = COALESCE(?, FirstName), " +
+                "LastName = COALESCE(?, LastName), " +
+                "Email = COALESCE(?, Email), " +
+                "PhoneNum = COALESCE(?, PhoneNum), " +
+                "Street = COALESCE(?, Street), " +
+                "Zipcode = COALESCE(?, Zipcode), " +
+                "StateID = COALESCE(?, StateID), " +
+                "ClassStandingID = COALESCE(?, ClassStandingID), " +
+                "isActive = COALESCE(?, isActive) " +
+                "WHERE StudentNum = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, firstName);
+            pstmt.setString(2, lastName);
+            pstmt.setString(3, email);
+            pstmt.setString(4, phoneNum);
+            pstmt.setString(5, street);
+            pstmt.setString(6, zipcode);
+            pstmt.setString(7, stateId);
+            pstmt.setString(8, classStandingId);
+            pstmt.setObject(9, isActive);
+            pstmt.setInt(10, studentNum);
 
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                return "Student updated successfully.";
+            } else {
+                return "No student found with student number: " + studentNum;
+            }
+        } catch (SQLException e) {
+            return "Error updating student: " + e.getMessage();
+        }
+    }
+    public String enrollStudent(int studentNum, int courseNum) {
+        String sql = "INSERT INTO Enrollment (StudentID, CourseID) VALUES (" +
+            "(SELECT ID FROM Student WHERE StudentNum = ?), " +
+            "(SELECT ID FROM Course WHERE CourseNum = ?))";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentNum);
             pstmt.setInt(2, courseNum);
 
@@ -128,12 +122,12 @@ public class server {
             if (e.getMessage().contains("null value in column")) {
                 return "Error: Student #" + studentNum + " or Course #" + courseNum + " does not exist.";
             }
-        return "Error enrolling student: " + e.getMessage();
+            return "Error enrolling student: " + e.getMessage();
+        }
     }
-}
 
     public String dropStudent(int studentNum) {
-        String sql = "UPDATE \"Student\" SET \"isActive\" = false WHERE \"StudentNum\" = ?";
+        String sql = "UPDATE Student SET isActive = false WHERE StudentNum = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentNum);
@@ -533,7 +527,7 @@ public class server {
     //Creates a new teacher in the database
     public String createTeacher_Server(int teacherNum, String firstName, String lastName, String phoneNum, String email,
             String street, String zipcode, String stateId) {
-        String sql = "INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, \"isActive\") "
+        String sql = "INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, isactive) "
                 +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, true)";
 
@@ -757,7 +751,7 @@ public class server {
                 valueToSet = newVal;
                 break;
             case "8":
-                colName = "\"isActive\"";
+                colName = "isActive";
                 valueToSet = Boolean.parseBoolean(newVal);
                 break;
             default:

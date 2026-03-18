@@ -29,14 +29,14 @@ INSERT INTO State (ID, Name) VALUES
 
 INSERT INTO CourseOffering (Name, Offered) 
 VALUES
-('Intro to CS'),
-('Data Structures'),
-('Algorithms'),
-('Database Systems'),
-('Linear Algebra'),
-('Calculus I'),
-('Physics I'),
-('English Comp');
+('Intro to CS', true),
+('Data Structures', true),
+('Algorithms', true),
+('Database Systems', true),
+('Linear Algebra', true),
+('Calculus I', true),
+('Physics I', true),
+('English Comp', true);
 
 
 INSERT INTO Teacher (TeacherNum, FirstName, LastName, PhoneNum, Email, Street, Zipcode, StateID, isActive) VALUES
