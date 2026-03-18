@@ -997,33 +997,27 @@ public class server {
         }
     }
     public void updateAssignmentGradeForAll(String assignmentName, int courseNum, double grade) {
-        String sql = "UPDATE StudentGrade SET Grade = ? " +
-                    "WHERE AssignmentID = (" +
-                        "SELECT a.ID FROM Assignment a " +
-                        "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
-                        "JOIN Course c ON gc.CourseID = c.ID " +
-                        "WHERE a.Name = ? AND c.CourseNum = ?" +
-                    ") " +
-                    "AND StudentID IN (" +
-                        "SELECT e.StudentID FROM Enrollment e " +
-                        "JOIN Course c ON e.CourseID = c.ID " +
-                        "WHERE c.CourseNum = ?" +
-                    ")";
+        String sql = "INSERT INTO StudentGrade (AssignmentID, StudentID, Grade) " +
+                    "SELECT a.ID, e.StudentID, ? " +
+                    "FROM Assignment a " +
+                    "JOIN GradeCategory gc ON a.CategoryID = gc.ID " +
+                    "JOIN Course c ON gc.CourseID = c.ID " +
+                    "JOIN Enrollment e ON c.ID = e.CourseID " +
+                    "WHERE a.Name = ? AND c.CourseNum = ? " +
+                    "ON CONFLICT (AssignmentID, StudentID) DO UPDATE SET Grade = EXCLUDED.Grade";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             pstmt.setDouble(1, grade);
             pstmt.setString(2, assignmentName);
             pstmt.setInt(3, courseNum);
             pstmt.setInt(4, courseNum);
 
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Updated grade for " + rowsAffected + " students.");
-            } else {
-                System.out.println("No matching records found.");
-            }
+            int rows = pstmt.executeUpdate();
+            System.out.println("Grades upserted for " + rows + " students.");
+
         } catch (SQLException e) {
-            System.out.println("Error updating grades: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
