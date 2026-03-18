@@ -26,12 +26,18 @@ public class server {
         Dotenv dotenv = Dotenv.load();
         String url = dotenv.get("DB_URL");
 
-        // Attempt connection to DB
         try {
-            // Sets the connection
             this.conn = DriverManager.getConnection(url);
-        
-        // Catch exception
+            
+            // Apply missing constraints
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                "ALTER TABLE StudentGrade ADD CONSTRAINT unique_assignment_student " +
+                "UNIQUE (AssignmentID, StudentID)")) {
+                pstmt.execute();
+            } catch (SQLException e) {
+                // Ignore if constraint already exists
+            }
+
         } catch (Exception e) {
             System.err.println("Connection failed!");
             e.printStackTrace();

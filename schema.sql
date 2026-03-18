@@ -1,4 +1,4 @@
-
+/*
 -- Uncomment this section of the code when testing on your machine --
 -- Keep this section commented out if running on the server -- 
 \c postgres
@@ -8,7 +8,7 @@ CREATE DATABASE dbAnything;
 \c dbAnything
 
 SELECT current_database();
-
+*/
 
 CREATE TABLE IF NOT EXISTS ClassStanding(
     ID          VARCHAR(2) NOT NULL,
