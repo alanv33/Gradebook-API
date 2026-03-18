@@ -432,8 +432,7 @@ public class server {
 
     
     public String deleteGradeCategory(int courseNumber, String gradeCategoryName) {
-        String sql = "DELETE FROM GradeCategory " +
-                 "WHERE Name = ? AND CourseID = (SELECT ID FROM Course WHERE CourseNum = ?)";
+            String sql = "DELETE FROM GradeCategory " +  "WHERE Name = ? AND CourseID = (SELECT ID FROM Course WHERE CourseNum = CAST(? AS VARCHAR))";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, courseNumber);
             pstmt.setString(2, gradeCategoryName);
