@@ -441,6 +441,8 @@ public class server {
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, gradeCategoryName);
             pstmt.setInt(2, courseNumber);
+            pstmt.setString(3, gradeCategoryName);
+            pstmt.setInt(4, courseNumber);
             int rowsAffected = pstmt.executeUpdate();
         if (rowsAffected > 0) {
             return "Grade Category deleted successfully.";
