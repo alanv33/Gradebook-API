@@ -1004,7 +1004,6 @@ public class server {
             pstmt.setDouble(1, grade);
             pstmt.setString(2, assignmentName);
             pstmt.setInt(3, courseNum);
-            pstmt.setInt(4, courseNum);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
