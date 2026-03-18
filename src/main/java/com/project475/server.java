@@ -435,7 +435,7 @@ public class server {
             String sql = "DELETE FROM GradeCategory " +  "WHERE Name = ? AND CourseID = (SELECT ID FROM Course WHERE CourseNum = CAST(? AS VARCHAR))";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, courseNumber);
-            pstmt.setString(2, gradeCategoryName);
+            pstmt.setString(2, String.valueOf(courseNumber));
 
             int rowsAffected = pstmt.executeUpdate();
         if (rowsAffected > 0) {
