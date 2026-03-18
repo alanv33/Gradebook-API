@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS StudentGrade(
     Grade           DECIMAL(4,2),
 
     PRIMARY KEY (ID),
+    UNIQUE (AssignmentID, StudentID),
     Foreign Key (AssignmentID) references Assignment(ID) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     Foreign Key (StudentID) references Student(ID) DEFERRABLE INITIALLY DEFERRED
 );
